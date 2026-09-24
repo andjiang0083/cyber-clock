@@ -6,6 +6,10 @@
 
 > *放桌上是一条 HUD，拿手里是一块仪表。*
 
+![CYBER CLOCK 运行在 M5StickS3 上——Matrix Green 主题、FULL 模式：时间 10:43、日期 2026-07-08 WED、满格电量，背景是数字雨](docs/images/cyber-clock-sticks3-matrix-green.jpg)
+
+*M5StickS3 · Matrix Green 主题 · `FULL` 模式（v1.0.1 构建；v1.1.0 界面零变化）。*
+
 两个固件版本都在本仓库：`src/` 是 **M5StickS3** 版（双按键），`cardputer/` 是 **M5Cardputer** 版（物理键盘，界面完全一致）。两者共用同一套代码——画面、数字雨引擎、主题、配网、时区选择都是同一份实现，只有输入层和最深的睡眠档不同。
 
 同一套数字雨引擎在 M5Stack Tab5 上的移植是另一个独立项目：[matrix-rain-tab5](https://github.com/andjiang0083/matrix-rain-tab5)（ESP32-P4，1280×720 MIPI-DSI）。

@@ -122,16 +122,19 @@ maintainer).
 
 ---
 
-## 9. Photos for the README
+## 9. A Cardputer photo for the README
 
-**What:** the README has no picture of the actual clock. A 240×135 screen is hard
-to photograph well, but a good shot sells the project better than any table.
+**What:** the StickS3 shot is in —
+`docs/images/cyber-clock-sticks3-matrix-green.jpg` (Matrix Green, `FULL` mode,
+taken 2026-07-08). The Cardputer build still has no photo, so the README shows
+only one of the two targets.
 
-**Done when:** one photo per target (StickS3 and Cardputer, `FULL` mode, a dark
-background, one of the six themes) is committed under `docs/images/` and embedded
-in both READMEs with the theme named in the caption.
+**Done when:** a Cardputer shot (`FULL` mode, dark background, any of the six
+themes) is committed under `docs/images/`, embedded next to the StickS3 one, with
+the theme named in the caption. A second StickS3 shot in a different theme would
+also be welcome.
 
-**Needs a device:** yes, plus a camera.
+**Needs a device:** yes — a Cardputer, plus a camera.
 
 ---
 

@@ -6,6 +6,10 @@
 
 > *On the desk it is a HUD. In the hand it is an instrument.*
 
+![CYBER CLOCK on an M5StickS3 — Matrix Green theme in FULL mode: the time 10:43, the date 2026-07-08 WED, a full battery indicator and the digital rain behind it](docs/images/cyber-clock-sticks3-matrix-green.jpg)
+
+*M5StickS3 · Matrix Green theme · `FULL` mode (v1.0.1 build; the UI is unchanged in v1.1.0).*
+
 Both firmware builds live in this repository: `src/` is the **M5StickS3** build (two buttons), `cardputer/` is the **M5Cardputer** build (physical keyboard, same UI). They share one code base — the graphics, rain engine, themes, WiFi provisioning and timezone picker are the same code; only the input layer and the sleep depth differ.
 
 The M5Stack Tab5 port of the same rain engine lives in its own project: [matrix-rain-tab5](https://github.com/andjiang0083/matrix-rain-tab5) (ESP32-P4, 1280×720 MIPI-DSI).

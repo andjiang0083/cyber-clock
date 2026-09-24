@@ -88,13 +88,15 @@
 
 ---
 
-## 9. README 配图
+## 9. README 配图（还缺 Cardputer）
 
-**内容：** README 里没有实物照片。240×135 的屏幕不好拍，但一张好照片比任何表格都更能说明问题。
+**内容：** StickS3 的实拍已经进仓库了——
+`docs/images/cyber-clock-sticks3-matrix-green.jpg`（Matrix Green，`FULL` 模式，2026-07-08 拍摄）。
+Cardputer 版本还没有照片，所以 README 目前只展示了两台设备中的一台。
 
-**完成标准：** 每个版本一张实拍（StickS3 与 Cardputer，`FULL` 模式，深色背景，六套主题里任选一套），放在 `docs/images/` 下并嵌入两个 README，图注写明主题名。
+**完成标准：** Cardputer 实拍（`FULL` 模式、深色背景、六套主题里任选一套）放进 `docs/images/`，与 StickS3 那张并列嵌入，图注写明主题名。再补一张不同主题的 StickS3 也欢迎。
 
-**需要实机：** 是，还需要一台相机。
+**需要实机：** 是——一台 Cardputer，外加一台相机。
 
 ---
 

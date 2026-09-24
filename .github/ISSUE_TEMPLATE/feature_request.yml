@@ -1,0 +1,66 @@
+name: Feature request
+description: Suggest a change to the clock (check ROADMAP.md first)
+title: "[feature] "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Before filing: [ROADMAP.md](../blob/main/ROADMAP.md) lists the work that is
+        already scoped, and its **Not planned** section says what this project
+        deliberately will not become. If your idea is on either list, comment there
+        instead.
+        中文也可以直接写。
+
+  - type: dropdown
+    id: target
+    attributes:
+      label: Which build? / 哪个版本
+      options:
+        - M5StickS3
+        - M5Cardputer
+        - Both
+    validations:
+      required: true
+
+  - type: textarea
+    id: idea
+    attributes:
+      label: What should it do? / 想要什么效果
+      description: Describe the behaviour on the panel, not the implementation.
+    validations:
+      required: true
+
+  - type: textarea
+    id: why
+    attributes:
+      label: Why is it worth the screen space? / 为什么值得占这块屏幕
+      description: |
+        The 240×135 panel is the scarcest resource in this project, and the
+        project rule is that no new element becomes permanently visible unless it
+        belongs on a clock. Tell us when your feature shows up and when it goes away.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: hardware
+    attributes:
+      label: Do you have the hardware to test it? / 你有设备可以实测吗
+      options:
+        - Yes, StickS3
+        - Yes, Cardputer
+        - Yes, both
+        - No
+    validations:
+      required: true
+
+  - type: dropdown
+    id: willing
+    attributes:
+      label: Would you like to implement it? / 你打算自己实现吗
+      options:
+        - Yes, I can open a PR
+        - Yes, with some guidance
+        - No, just suggesting
+    validations:
+      required: true

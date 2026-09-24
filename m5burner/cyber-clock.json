@@ -1,0 +1,42 @@
+[
+  {
+    "_id": "cyber-clock-sticks3",
+    "name": "Cyber Clock (StickS3)",
+    "description": "Cyberpunk desk clock for M5StickS3: NTP timekeeping, a column-trail digital-rain engine with 6 character sets, 6 neon palettes, 40-band microphone spectrum, IMU shake-to-theme and a three-stage power save (60 s down-clock, 180 s Light Sleep with button wake). | M5StickS3 赛博朋克桌面时钟：NTP 自动对时、6 种字符集的列轨迹数字雨、6 套霓虹配色、40 段麦克风频谱、摇一摇换主题，以及三段式省电（60 秒降频 / 180 秒 Light Sleep + 按键唤醒）。",
+    "author": "andjiang0083",
+    "category": "M5StickS3",
+    "tags": ["clock", "matrix", "ntp", "cyberpunk"],
+    "cover": "",
+    "github": "https://github.com/andjiang0083/cyber-clock",
+    "download": 0,
+    "versions": [
+      {
+        "version": "1.1.0",
+        "published_at": "2026-08-01",
+        "file": "cyber-clock-v1.1.0-merged.bin",
+        "published": true,
+        "change_log": "First public release. Three display modes, six rain character sets, six themes, timezone picker, microphone spectrum, and a fixed long-press double-trigger. Cardputer build reaches feature parity."
+      }
+    ]
+  },
+  {
+    "_id": "cyber-clock-cardputer",
+    "name": "Cyber Clock (Cardputer)",
+    "description": "Cyberpunk desk clock for M5Cardputer: the same 240x135 clock with physical-keyboard controls, NTP timekeeping, column-trail digital rain with 6 character sets, 6 neon palettes, 40-band microphone spectrum and IMU shake-to-theme. Power save down-clocks to 80 MHz + 1 fps (no Light Sleep: the keyboard sits behind an I2C expander). | M5Cardputer 赛博朋克桌面时钟：同一块 240x135 时钟，改用物理键盘操作；NTP 自动对时、6 种字符集的列轨迹数字雨、6 套霓虹配色、40 段麦克风频谱、摇一摇换主题。省电降频到 80MHz + 1fps（无 Light Sleep：键盘挂在 I²C 扩展芯片后面）。",
+    "author": "andjiang0083",
+    "category": "M5Cardputer",
+    "tags": ["clock", "matrix", "ntp", "cyberpunk"],
+    "cover": "",
+    "github": "https://github.com/andjiang0083/cyber-clock",
+    "download": 0,
+    "versions": [
+      {
+        "version": "1.1.0",
+        "published_at": "2026-08-01",
+        "file": "cyber-clock-cardputer-v1.1.0-merged.bin",
+        "published": true,
+        "change_log": "First public release. Keyboard controls (S/R/C/W/+/-), timezone picker, microphone spectrum, IMU shake-to-theme, and the same rain engine and palettes as the StickS3 build."
+      }
+    ]
+  }
+]

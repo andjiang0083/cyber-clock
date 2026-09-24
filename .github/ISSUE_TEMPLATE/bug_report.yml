@@ -1,0 +1,106 @@
+name: Bug report
+description: Something on the panel is wrong, or the clock misbehaves
+title: "[bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the report. Two details decide how fast this gets fixed:
+        **which build** and **whether the device recovers by itself**.
+        中文用户也可以用中文填写，不必翻译。
+
+  - type: dropdown
+    id: target
+    attributes:
+      label: Which build? / 哪个版本
+      options:
+        - M5StickS3
+        - M5Cardputer
+        - Both (same behaviour on both)
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Firmware version / 固件版本
+      description: The version line on the splash screen (e.g. `v1.1.0`).
+      placeholder: v1.1.0
+    validations:
+      required: true
+
+  - type: dropdown
+    id: install
+    attributes:
+      label: How did you install it? / 怎么装上去的
+      options:
+        - M5Burner (merged .bin from Releases)
+        - esptool write_flash (merged .bin)
+        - PlatformIO upload (built from source)
+        - Built from source and uploaded in VS Code
+        - Other (explain below)
+    validations:
+      required: true
+
+  - type: textarea
+    id: what
+    attributes:
+      label: What happens? / 现象
+      description: What you expected, and what you actually see on the panel.
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce / 复现步骤
+      placeholder: |
+        1. Power on with the battery only
+        2. Wait 3 minutes
+        3. Press BtnB
+    validations:
+      required: true
+
+  - type: dropdown
+    id: recovery
+    attributes:
+      label: Does the device recover? / 设备能自己恢复吗
+      description: This single answer separates a software panic from a hardware-level hang — the two have completely different root causes.
+      options:
+        - It recovers by itself (or on the next button press)
+        - It needs a reset button press
+        - It needs the power to be cycled (unplug / battery switch)
+        - Not applicable (cosmetic issue)
+    validations:
+      required: true
+
+  - type: input
+    id: power
+    attributes:
+      label: Power source / 供电方式
+      description: Battery only, USB only, or both? This matters — USB cancels every power-save stage.
+      placeholder: battery only
+    validations:
+      required: true
+
+  - type: textarea
+    id: serial
+    attributes:
+      label: Serial log (optional) / 串口日志（可选）
+      description: |
+        `pio device monitor` at 115200, with the ESP32 exception decoder enabled.
+        The firmware stays quiet by default, so a decode of a panic is the most useful thing you can paste.
+      render: text
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting / 提交前确认
+      options:
+        - label: I searched the existing issues for the same symptom / 我已搜索过现有 issue
+          required: true
+        - label: I am running a build from this repository (not a modified fork) / 我用的是本仓库的构建（不是改过的分支）
+          required: false

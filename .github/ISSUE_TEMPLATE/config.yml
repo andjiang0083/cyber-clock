@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Build / flash problems
+    url: https://github.com/andjiang0083/cyber-clock/blob/main/BUILDING.md
+    about: Read BUILDING.md first — most "it will not build / it will not flash" cases are in the troubleshooting table.
+  - name: Questions and show-and-tell
+    url: https://github.com/andjiang0083/cyber-clock/discussions
+    about: Ask anything, or post a photo of your clock. 中文提问也欢迎。

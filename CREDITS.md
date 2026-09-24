@@ -1,0 +1,100 @@
+# Credits and attribution
+
+中文摘要见文末（[跳到中文](#中文摘要)）。
+
+CYBER CLOCK stands on other people's work, and one part of it is **derived from a
+third-party project under a licence that requires this notice**. Here is exactly
+whose work is involved and under what terms.
+
+## Build dependencies (fetched at build time, not vendored)
+
+| Project | Author / origin | Licence | How it is used here |
+|---|---|---|---|
+| [M5Unified](https://github.com/m5stack/M5Unified) + [M5GFX](https://github.com/m5stack/M5GFX) | M5Stack | MIT | Board abstraction, ST7789 driver, `LGFX_Sprite` double buffer, power/IMU/mic APIs. Resolved at build time without a version pin — see [BUILDING.md](BUILDING.md) §6. |
+| [M5Cardputer](https://github.com/m5stack/M5Cardputer) | M5Stack | MIT | Keyboard and board support for the Cardputer target. |
+| [Arduino core for ESP32](https://github.com/espressif/arduino-esp32) | Espressif | LGPL-2.1 | Arduino API, `Preferences`/NVS, `configTime()` NTP, USB CDC. |
+| [ESP-IDF](https://github.com/espressif/esp-idf) | Espressif | Apache-2.0 | The SDK underneath: `esp_wifi`, `esp_event`, `esp_netif`, `esp_light_sleep_start`, RTC timers. |
+| [PlatformIO](https://platformio.org/) + [platform-espressif32](https://github.com/platformio/platform-espressif32) | PlatformIO Labs / community | Apache-2.0 | Build system, upload, serial monitor. |
+
+## Code derived from another project — **bmorcelli/Launcher**
+
+The WiFi provisioning layer is not written from scratch. These files come from
+[bmorcelli/Launcher](https://github.com/bmorcelli/Launcher) (`src/idf/idf_wifi.cpp`,
+`src/idf/idf_wifi.h` and the `mykeyboard.cpp` input method), **MIT licensed,
+© 2023 shikarunochi**:
+
+| File in this repository | Origin | Relationship |
+|---|---|---|
+| `src/idf/idf_wifi.cpp`, `src/idf/idf_wifi.h` (and the copies under `cardputer/src/idf/`) | Launcher `src/idf/idf_wifi.cpp/.h` | Trimmed derivative: the ESP-Hosted/SDIO backend, the reconnect timer, the serial console and the board-specific pin overrides were removed; the STA/AP/scan flow, the wrong-password detection and the `launcherWifi*` naming are Launcher's. |
+| `src/textinput.cpp`, `src/textinput.h` | Launcher `mykeyboard.cpp` | Concept port: a character-scrolling input method, rewritten for a 240×135 landscape screen driven by two buttons. |
+| `src/wifisetup.cpp`, `src/wifisetup.h` | — | This project's own code; it calls the two items above. |
+
+Because that code is MIT, its notice is reproduced here in full:
+
+```
+MIT License
+
+Copyright (c) 2023 shikarunochi
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
+
+## Vendored first-party code — `arcadia/`
+
+`arcadia/core/` is a snapshot of **Arcadia**, a header-only GUI / input / IMU /
+power-save framework written by this project's author and reused across his ESP32
+projects. It is committed here (rather than fetched) so that a fresh clone builds
+with no extra steps. It is covered by the same MIT licence as the rest of this
+repository; there is no third-party code inside it.
+
+## Everything else in this repository
+
+The digital-rain engine and its column-trail decay, the six rain character sets
+and their head colours, the six palettes, the three display modes, the
+sprite-allocation fallback, the power-save state machine and its `ext0` wake
+path, the timezone picker, the NTP handling, the splash screen and the
+`make-release.sh` tooling are this repository's own work.
+
+## Trademarks and assets
+
+- **M5Stack**, **StickS3**, **Cardputer** and **ESP32** are trademarks of their
+  respective owners. This is an unaffiliated community project written by
+  somebody who owns the hardware; it is not endorsed by or connected to M5Stack.
+- The palettes are original colour choices. The project ships **no film assets,
+  no logos, no artwork, no game ROMs, no BIOS images and no fonts under
+  proprietary licences** — the text is drawn with the GLCD font that comes with
+  M5GFX/LovyanGFX, and the on-screen keyboard is ASCII.
+- If you believe something here infringes your rights, please open an issue — it
+  will be removed or replaced promptly.
+
+---
+
+## 中文摘要
+
+本项目建立在他人工作之上，并且**有一层代码派生自第三方 MIT 项目**，因此必须写明：
+
+- **构建依赖**（构建时下载，不入库）：M5Unified / M5GFX（MIT，M5Stack）、M5Cardputer 库（MIT，M5Stack）、Arduino-ESP32 核心（LGPL-2.1，乐鑫）、ESP-IDF（Apache-2.0，乐鑫）、PlatformIO 与 platform-espressif32（Apache-2.0）。
+- **派生自 [bmorcelli/Launcher](https://github.com/bmorcelli/Launcher)（MIT，© 2023 shikarunochi）的部分**：
+  - `src/idf/idf_wifi.cpp/.h`（含 `cardputer/src/idf/` 下的副本）是 Launcher 同名文件的**裁剪版**——去掉了 ESP-Hosted/SDIO 后端、重连定时器、串口控制台和板级引脚覆盖；STA/AP/扫描流程、密码错误检测、`launcherWifi*` 命名都来自 Launcher。
+  - `src/textinput.cpp/.h` 是 Launcher `mykeyboard.cpp` 的**概念移植**：字符滚动输入法，为 240×135 横屏 + 双按键重写。
+  - `src/wifisetup.cpp/.h` 是本项目自己的代码，调用上面两者。
+  - MIT 要求保留版权与许可声明，因此 Launcher 的 MIT 许可原文已完整附在上文（英文部分）。
+- **`arcadia/core/`**：作者自用的 header-only GUI / 输入 / IMU / 省电框架（Arcadia）快照，随仓库提交以保证 clone 即可构建，同样是 MIT，内部不含第三方代码。
+- 其余部分——数字雨引擎与列轨迹衰减、6 种字符集与头部色调、6 套配色、三种界面模式、Sprite 分配兜底、省电状态机与 `ext0` 唤醒路径、时区选择器、NTP 处理、开机动画、`make-release.sh` 工具——均为本仓库原创。
+- **M5Stack / StickS3 / Cardputer / ESP32** 是各自所有者的商标，本项目与 M5Stack 无隶属关系。仓库**不含任何影视素材、logo、美术资源、游戏 ROM、BIOS 镜像或专有字体**；文字使用 M5GFX/LovyanGFX 自带的 GLCD 字体绘制，屏幕键盘为 ASCII。若你认为此处内容侵犯了你的权利，请开 issue，我们会尽快移除或替换。

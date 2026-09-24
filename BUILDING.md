@@ -177,16 +177,30 @@ source is identical, the linked library is not. Pinning the platform and the
 libraries is an open [roadmap](ROADMAP.md) item — a PR that pins them and
 records the resulting sizes is welcome.
 
-Measured on the author's machine, with the PlatformIO package cache already
-populated:
+Measured on the author's machine. Build time depends almost entirely on what is
+already cached, which is why a single number would be misleading:
 
 | Step | Time |
 |---|---|
-| StickS3 clean build (`rm -rf .pio && pio run`) | 145 s |
-| Cardputer build after that (packages cached) | 22 s |
+| StickS3, fresh clone, PlatformIO package **and** build caches warm | ~10 s |
+| StickS3, tree where M5Unified/M5GFX had to be fetched and compiled | 145 s |
+| Cardputer, right after either of the above | ~11–22 s |
+| Any of the above on a machine that has never run PlatformIO | minutes (platform + toolchain download first) |
 
-First-ever build on a clean machine is slower — PlatformIO downloads the
-platform, the toolchain and the Arduino framework before it compiles anything.
+### How reproducible is it, really?
+
+Checked by cloning the published repository and building both targets from
+scratch:
+
+- the resulting images are **exactly the same size** as the released ones
+  (1,242,592 B and 1,242,384 B);
+- they differ in **70 bytes**: the 32-byte ELF SHA-256 in the application
+  descriptor, the 32-byte image digest esptool appends at the end, and 6 bytes of
+  `__TIME__` in the descriptor's version string. Nothing else differs.
+
+So the code is reproducible; the timestamps embedded by the toolchain are not.
+If you need bit-identical output, build with `SOURCE_DATE_EPOCH` set and compare
+against a locally produced reference rather than against the release asset.
 
 ---
 

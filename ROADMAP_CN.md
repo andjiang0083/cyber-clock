@@ -88,15 +88,13 @@
 
 ---
 
-## 9. README 配图（还缺 Cardputer）
+## 9. 再补几张图
 
-**内容：** StickS3 的实拍已经进仓库了——
-`docs/images/cyber-clock-sticks3-matrix-green.jpg`（Matrix Green，`FULL` 模式，2026-07-08 拍摄）。
-Cardputer 版本还没有照片，所以 README 目前只展示了两台设备中的一台。
+**内容：** 两个版本的实拍都已经进 README 了（`docs/images/`——StickS3 是 Matrix Green，Cardputer 是 Ember Orange，都是 `FULL` 模式，2026-07-08 拍摄）。还差两处：另外四套主题一张图都没有；Cardputer 那张是特写，键盘底部被裁掉了。
 
-**完成标准：** Cardputer 实拍（`FULL` 模式、深色背景、六套主题里任选一套）放进 `docs/images/`，与 StickS3 那张并列嵌入，图注写明主题名。再补一张不同主题的 StickS3 也欢迎。
+**完成标准：** 要么来一张能看全键盘的 Cardputer 远景，要么来一张 `SAVER` / `Night Red` 暗室照——放进 `docs/images/`，与现有两张并列嵌入，图注写明主题名。
 
-**需要实机：** 是——一台 Cardputer，外加一台相机。
+**需要实机：** 是，外加一台相机。
 
 ---
 

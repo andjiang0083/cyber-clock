@@ -6,9 +6,12 @@
 
 > *放桌上是一条 HUD，拿手里是一块仪表。*
 
-![CYBER CLOCK 运行在 M5StickS3 上——Matrix Green 主题、FULL 模式：时间 10:43、日期 2026-07-08 WED、满格电量，背景是数字雨](docs/images/cyber-clock-sticks3-matrix-green.jpg)
+| M5StickS3 —— Matrix Green，`FULL` 模式 | M5Cardputer —— Ember Orange，`FULL` 模式 |
+|---|---|
+| ![M5StickS3 上的 CYBER CLOCK：时间 10:43、日期 2026-07-08 WED、满格电量，背景是数字雨](docs/images/cyber-clock-sticks3-matrix-green.jpg) | ![M5Cardputer 上的 CYBER CLOCK：琥珀色的 22:35 压在绿色数字雨上，日期 2026-07-08 WED，屏幕下方是 Cardputer 的黑色椭圆按键](docs/images/cyber-clock-cardputer-ember-orange.jpg) |
+| 双按键。可进 Light Sleep + 硬件唤醒。 | 物理键盘。下限是 80MHz + 1fps。 |
 
-*M5StickS3 · Matrix Green 主题 · `FULL` 模式（v1.0.1 构建；v1.1.0 界面零变化）。*
+*两张图均为 `FULL` 模式、v1.0.1 构建、2026-07-08 拍摄；v1.1.0 界面零变化。*
 
 两个固件版本都在本仓库：`src/` 是 **M5StickS3** 版（双按键），`cardputer/` 是 **M5Cardputer** 版（物理键盘，界面完全一致）。两者共用同一套代码——画面、数字雨引擎、主题、配网、时区选择都是同一份实现，只有输入层和最深的睡眠档不同。
 

@@ -122,19 +122,18 @@ maintainer).
 
 ---
 
-## 9. A Cardputer photo for the README
+## 9. More photos
 
-**What:** the StickS3 shot is in —
-`docs/images/cyber-clock-sticks3-matrix-green.jpg` (Matrix Green, `FULL` mode,
-taken 2026-07-08). The Cardputer build still has no photo, so the README shows
-only one of the two targets.
+**What:** both targets now have a photo in the README (`docs/images/` — Matrix
+Green on the StickS3, Ember Orange on the Cardputer, both `FULL` mode, taken
+2026-07-08). Two gaps remain: the other four themes have no picture at all, and
+the Cardputer shot is a close-up whose keyboard is cropped at the bottom.
 
-**Done when:** a Cardputer shot (`FULL` mode, dark background, any of the six
-themes) is committed under `docs/images/`, embedded next to the StickS3 one, with
-the theme named in the caption. A second StickS3 shot in a different theme would
-also be welcome.
+**Done when:** either a wider Cardputer shot that shows the whole keyboard, or a
+`SAVER` / dark-room shot in `Night Red` — committed under `docs/images/` and
+embedded next to the existing two with the theme named in the caption.
 
-**Needs a device:** yes — a Cardputer, plus a camera.
+**Needs a device:** yes, plus a camera.
 
 ---
 

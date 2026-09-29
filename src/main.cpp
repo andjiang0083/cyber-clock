@@ -44,10 +44,6 @@ static const char* RAIN_CHARSETS[(int)RainMode::MODES_N] = {
   "#*+:.<>/|~@%&$",      // 符号
   "ABCDEFGHIJKLMNOPQRSTUVWXYZ", // 字母
 };
-static const char* RAIN_NAMES[(int)RainMode::MODES_N] = {
-  "MATRIX", "NUMBERS", "BINARY", "HEX", "SYMBOLS", "ALPHA"
-};
-
 // ── Matrix rain (column-drop) ──
 static const int TRAIL_LEN = 5;
 #define MATRIX_N MATRIX_DROPS
@@ -106,6 +102,20 @@ static int tzLoad();
 static void handleButtons();
 static RainMode nextRainMode(RainMode m);
 
+// ── USB 供电判定 (缓存 1s) ──
+// 不要用 M5.Power.isCharging(): 它读充电器的 STAT 脚, 充满后立刻变 false,
+// 插着线的桌面时钟会被误判成"没插电"而进省电 → 背光归零。VBUS 电压才是"插着线"。
+static bool g_usbPlugged = false;
+static uint32_t g_usbLastRead = 0;
+static bool usbPowerPresent() {
+  uint32_t now = millis();
+  if (now - g_usbLastRead >= 1000) {
+    g_usbLastRead = now;
+    g_usbPlugged = M5.Power.getVBUSVoltage() > 1000;  // mV
+  }
+  return g_usbPlugged;
+}
+
 // ── Setup ──
 void setup() {
   auto cfg = M5.config();
@@ -117,6 +127,17 @@ void setup() {
 
   // Landscape 240×135
   ArcDisplay::begin(SCREEN_ROTATION, BRIGHTNESS_LEVELS[g_brightnessIdx]);
+
+  // sprite 分配失败 → canvas 上所有绘制会静默失效: 整屏黑、不崩溃、日志也空白
+  // (docs/bugfix-black-screen-spec.md)。这里显式熔断, 把黑屏变成一条可读信息。
+  if (!ArcDisplay::canvas.getBuffer()) {
+    M5.Display.fillScreen(TFT_BLACK);
+    M5.Display.setTextColor(TFT_RED);
+    M5.Display.setTextSize(2);
+    M5.Display.setCursor(12, 58);
+    M5.Display.print("SPRITE FAIL");
+    while (true) delay(1000);
+  }
 
   // Init themes after M5.begin
   initThemes();
@@ -151,17 +172,14 @@ void setup() {
       canvas.setCursor((240 - tw) / 2, 50);
       canvas.print(VERSION);
 
-      // 按键说明 (底部, 两列对齐)
+      // 按键说明 (底部) — 启动期与运行期分开写: 启动画面上按住 A 是进配网,
+      // 旧文案 "Hold-A=RainFX" 会把人骗进配网流程 (StickS3 没有 W 键, 这里也是唯一提示位)
       canvas.setTextSize(1);
       canvas.setTextColor(c565(140, 200, 160), TFT_BLACK);
       canvas.setCursor(8, 110);
-      canvas.print("A=Screen");
-      canvas.setCursor(130, 110);
-      canvas.print("Hold-A=RainFX");
+      canvas.print("Tap=skip  Hold-A=WiFi setup");
       canvas.setCursor(8, 122);
-      canvas.print("B=Theme");
-      canvas.setCursor(130, 122);
-      canvas.print("Hold-B=Bright");
+      canvas.print("A=Screen B=Theme Hold=Rain/Bright");
 
       canvas.endWrite();
       push();
@@ -189,11 +207,14 @@ void setup() {
     wifiSetupBegin(true);
     wifiStopAll();
     g_lastActivity = millis();
-  } else if (wifiSetupBegin(false)) {
-    if (!g_tzConfigured) {
+  } else {
+    bool wifiOk = wifiSetupBegin(false);
+    if (wifiOk && !g_tzConfigured) {
       pickTimezone();
-      syncNTP(); // re-sync with chosen TZ
+      syncNTP(); // re-sync with chosen TZ — 必须在关射频之前
     }
+    // 成功/失败/取消三条路径都要关射频 + 复位空闲计时。
+    // 旧代码只在 wifiSetupBegin() 返回 true 时关: 取消配网/扫不到网络会一直开着 WiFi 射频。
     wifiStopAll();
     g_lastActivity = millis();
   }
@@ -208,9 +229,9 @@ void loop() {
   uint32_t now = millis();
 
   // ── Power save state machine ──
-  // Detect USB charging: skip power save when plugged
-  bool charging = M5.Power.isCharging();
-  if (charging) {
+  // 插着 USB 就跳过省电 (否则插线充电到 100% 后会自己黑屏)
+  bool plugged = usbPowerPresent();
+  if (plugged) {
     // Wake from power save if USB plugged
     if (g_powerSave || g_extremeSave) {
       g_powerSave = false;
@@ -226,12 +247,13 @@ void loop() {
     }
   }
 
-  if (!g_powerSave && g_timeValid && now - g_lastActivity > IDLE_POWERSAVE_MS && !charging) {
+  // 前置条件不再要求 g_timeValid: 没配上 WiFi 的设备同样要省电 (旧逻辑下会常亮到没电)
+  if (!g_powerSave && now - g_lastActivity > IDLE_POWERSAVE_MS && !plugged) {
     g_powerSave = true;
     setCpuFrequencyMhz(80);
     stopAudio();
   }
-  if (!g_extremeSave && g_timeValid && now - g_lastActivity > IDLE_SLEEP_MS && !charging) {
+  if (!g_extremeSave && now - g_lastActivity > IDLE_SLEEP_MS && !plugged) {
     // Enter extreme power save
     g_extremeSave = true;
     M5.Display.setBrightness(0);
@@ -302,18 +324,21 @@ void loop() {
     }
     // Sleep 200ms (or until BtnA press via GPIO wakeup)
     esp_sleep_enable_timer_wakeup(SLEEP_POLL_US);
-    esp_sleep_enable_ext0_wakeup(GPIO_NUM_0, LOW); // BtnA = GPIO0
+    // BtnA = GPIO11 / BtnB = GPIO12 (M5Unified board_M5StickS3 板表)。旧值 GPIO0 是
+    // Stick-Bus 侧的 I²C 线, ext0 永远不会触发 → 短按唤不醒。GPIO11/12 都是 RTC GPIO。
+    esp_sleep_enable_ext0_wakeup(GPIO_NUM_11, LOW);
     esp_light_sleep_start();
-    // Woke up — give hardware time to stabilize, try multiple reads
+    // Woke up — give hardware time to stabilize, then sample buttons over ~60ms
+    // (轻点可能比下一次定时唤醒更早松开, 采样窗口太窄会漏检)
     delay(5);
     bool woke = false;
     if (esp_sleep_get_wakeup_cause() == ESP_SLEEP_WAKEUP_EXT0) {
-      woke = true; // BtnA GPIO wakeup — trust it
+      woke = true; // 按键 GPIO 唤醒 — 直接信任
     } else {
-      for (int i = 0; i < 5; i++) {
+      for (int i = 0; i < 15; i++) {
         M5.update();
         if (M5.BtnA.isPressed() || M5.BtnB.isPressed()) { woke = true; break; }
-        delay(2);
+        delay(4);
       }
     }
     if (woke) {
@@ -594,10 +619,14 @@ static uint16_t hueToRGB565(int hue, uint8_t bri) {
 }
 
 // ── Audio init / stop / update / render ──
+// 麦克风连续失败计数: record() 的瞬态失败(缓冲槽占满/锁竞争)不算硬件故障
+static int g_micFailStreak = 0;
+
 static void initAudio() {
   if (g_micActive || g_micFailed) return;
   g_micActive = M5.Mic.begin();
   g_audioLastSample = 0;
+  g_micFailStreak = 0;
   if (!g_micActive) {
     g_micFailed = true;
     return;
@@ -622,12 +651,17 @@ static void updateAudio() {
 
   // Record samples using static buffer (safe for async mic task)
   if (!M5.Mic.record(g_micBuf, AUDIO_SAMPLES)) {
-    // Mic failed — disable permanently to prevent watchdog
-    stopAudio();
-    g_micFailed = true;
-    memset(g_audioBars, 0, AUDIO_BARS);
+    // 瞬态失败不计故障: M5Unified 的 record() 在"缓冲槽占满/请求锁竞争"时也会立刻返回
+    // false (Mic_Class.hpp), 一次卡顿就把波形永久关掉太激进 → 连续 3 次才判硬件故障。
+    if (++g_micFailStreak >= 3) {
+      stopAudio();
+      g_micFailed = true;
+      g_micFailStreak = 0;
+      memset(g_audioBars, 0, AUDIO_BARS);
+    }
     return;
   }
+  g_micFailStreak = 0;
 
   // Compute per-bar amplitude
   int samplesPerBar = AUDIO_SAMPLES / AUDIO_BARS;  // 4 samples per bar
@@ -757,25 +791,24 @@ static void render(Density density) {
 
 // ── IMU ──
 static void updateIMU() {
-  if (!M5.Imu.isEnabled()) return;
   static bool imuInited = false;
   if (!imuInited) {
     g_imu.begin();
     g_imu.tau = IMU_TAU;   // config.h 时间常数
     imuInited = true;
   }
+  if (!g_imu.available()) return;   // 与 Cardputer 端统一: 用 ArcIMU 自己的判断, 不再问 M5.Imu
   // 省电时降频采样
   static uint32_t lastIMU = 0;
   uint32_t now = millis();
   if (g_powerSave && now - lastIMU < 500) return;
   lastIMU = now;
-  g_imu.update();
-  g_imu.getAttitude(g_imu.pitch, g_imu.roll);
+  g_imu.update();   // pitch/roll 由 update() 写入, 无需再 getAttitude() 自赋值
 }
 
 // ── Shake Detection ──
 static void checkShake() {
-  if (!M5.Imu.isEnabled()) return;
+  if (!g_imu.available()) return;
   // 省电模式下不响应摇动 (IMU 已降频, 阈值行为不一致)
   if (g_powerSave || g_extremeSave) return;
   float dp = fabsf(g_imu.pitch - g_prevP);

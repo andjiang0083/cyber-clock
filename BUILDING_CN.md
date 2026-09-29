@@ -98,7 +98,7 @@ M5Burner 要的是一个**从偏移 `0x0` 写入的合并镜像**，而且 bootl
 ```bash
 ESPTOOL=~/.platformio/packages/tool-esptoolpy/esptool.py
 python3 $ESPTOOL --chip esp32s3 merge_bin \
-  --output dist/cyber-clock-v1.1.0-merged.bin \
+  --output dist/cyber-clock-v1.1.1-merged.bin \
   --flash_mode dio --flash_freq 80m --flash_size 8MB \
   0x0000 .pio/build/sticks3/bootloader.bin \
   0x8000 .pio/build/sticks3/partitions.bin \
@@ -110,7 +110,7 @@ Cardputer 版（在 `cardputer/` 目录下执行）：
 
 ```bash
 python3 $ESPTOOL --chip esp32s3 merge_bin \
-  --output ../dist/cyber-clock-cardputer-v1.1.0-merged.bin \
+  --output ../dist/cyber-clock-cardputer-v1.1.1-merged.bin \
   --flash_mode dio --flash_freq 80m --flash_size 8MB \
   0x0000 .pio/build/cardputer/bootloader.bin \
   0x8000 .pio/build/cardputer/partitions.bin \
@@ -122,10 +122,10 @@ python3 $ESPTOOL --chip esp32s3 merge_bin \
 
 ```bash
 # 1. bootloader 头里的 flash mode 字节必须是 0x02 (DIO)
-python3 -c "d=open('dist/cyber-clock-v1.1.0-merged.bin','rb').read(); print('DIO' if d[2]==0x02 else hex(d[2]))"
+python3 -c "d=open('dist/cyber-clock-v1.1.1-merged.bin','rb').read(); print('DIO' if d[2]==0x02 else hex(d[2]))"
 
 # 2. 校验和
-shasum -a 256 dist/cyber-clock-v1.1.0-merged.bin
+shasum -a 256 dist/cyber-clock-v1.1.1-merged.bin
 ```
 
 用 QIO（`0x00`）编出来的合并镜像用 esptool 刷没问题，但 M5Burner 会拒绝或者刷完起不来。如果 M5Burner 刷完是黑屏，第一个要查的就是这个字节。
@@ -139,11 +139,14 @@ shasum -a 256 dist/cyber-clock-v1.1.0-merged.bin
 | 组件 | 版本 |
 |---|---|
 | PlatformIO Core | 6.1.19 |
-| `platform = espressif32`（实际解析） | 7.0.1 |
+| `platform = espressif32`（实际解析） | pioarduino fork，**55.03.39**（`git+https://github.com/pioarduino/platform-espressif32.git#55.03.39`） |
 | Arduino core for ESP32 | 3.3.9 |
+| ESP-IDF（随 Arduino core） | 5.5.4 |
 | M5Unified | 0.2.23 |
 | M5GFX | 0.2.30 |
 | esptool | 5.3.0 |
+
+> **`platform = espressif32` 这个名字是有歧义的。** 它会解析到"本机已安装的、版本号最高的那个 build"——只拉过官方平台的机器会拿到 7.0.1 / Arduino core 2.x，而本次 release 是用 pioarduino fork 55.03.39 / Arduino core 3.3.9 构建的。跑一次 `pio run`，第一行会打印 `PLATFORM: Espressif 32 (55.3.39+sha…) (git+https://github.com/pioarduino/…)`；如果不一样，产物就不会和发布镜像逐字节一致。
 
 `platformio.ini` **没有**锁库版本（`m5stack/M5Unified` 没写版本约束），所以今天全新 clone 可能拉到更新的 M5Unified，编出来的镜像会大几 KB。这是预期内的：源码一样，链进去的库不一样。锁定平台与库版本是一项待办的 [roadmap](ROADMAP_CN.md) 事项——欢迎提一个把版本钉死、并把实测尺寸记录下来的 PR。
 
@@ -160,8 +163,8 @@ shasum -a 256 dist/cyber-clock-v1.1.0-merged.bin
 
 验证方式：把已发布的仓库 clone 下来，两个目标从零构建：
 
-- 产出的镜像与发布镜像**尺寸完全一致**（1,242,592 B 与 1,242,384 B）；
-- 差异为 **70 字节**：应用描述符里的 32 字节 ELF SHA-256、esptool 在文件末尾追加的 32 字节镜像摘要，以及描述符版本字符串里的 6 字节 `__TIME__`。除此之外没有任何差异。
+- 同一目标的两次构建，**尺寸完全一致**（StickS3 app 镜像 1,176,848 B，Cardputer 1,140,608 B）；
+- 差异为 **71 字节**（StickS3）/ **67 字节**（Cardputer）：应用描述符里的 32 字节 ELF SHA-256、esptool 在文件末尾追加的 32 字节镜像摘要，以及描述符版本字符串里的 6 字节 `__TIME__`。除此之外没有任何差异。
 
 也就是说：代码是可复现的，工具链嵌入的时间戳不是。如果你需要逐字节一致的产物，请设置 `SOURCE_DATE_EPOCH` 构建，并与你本地生成的参考产物对比，而不是和 release 附件对比。
 

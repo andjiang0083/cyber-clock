@@ -11,6 +11,13 @@
     "download": 0,
     "versions": [
       {
+        "version": "1.1.1",
+        "published_at": "2026-09-29",
+        "file": "cyber-clock-v1.1.1-merged.bin",
+        "published": true,
+        "change_log": "Review fixes (no visual change): USB power detection now uses VBUS voltage, so a fully charged StickS3 on a cable no longer dims and sleeps; Light Sleep button wake armed on the correct pin (GPIO11) with a wider post-wake sampling window; the WiFi radio is always shut down after a cancelled or failed setup pass; a single transient mic failure no longer kills the spectrum; sprite allocation failure now shows 'SPRITE FAIL' instead of a black screen."
+      },
+      {
         "version": "1.1.0",
         "published_at": "2026-08-01",
         "file": "cyber-clock-v1.1.0-merged.bin",
@@ -30,6 +37,13 @@
     "github": "https://github.com/andjiang0083/cyber-clock",
     "download": 0,
     "versions": [
+      {
+        "version": "1.1.1",
+        "published_at": "2026-09-29",
+        "file": "cyber-clock-cardputer-v1.1.1-merged.bin",
+        "published": true,
+        "change_log": "Review fixes (no visual change): PSRAM disabled (Cardputer-Adv has none and the build never used it), timezone screen key direction matched to the WiFi list, mic hiccups no longer disable the spectrum permanently, USB power save gating, and the on-screen keyboard's last cell no longer clips off-screen."
+      },
       {
         "version": "1.1.0",
         "published_at": "2026-08-01",

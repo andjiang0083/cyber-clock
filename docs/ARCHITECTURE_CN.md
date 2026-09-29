@@ -47,15 +47,22 @@ drawAudioBars();
 push();                     // sprite → 面板，一次原子拷贝
 ```
 
-没有 sprite 的话，逐图元绘制会让数字雨出现明显的撕裂。sprite 大小 240×135×2 = 64,800 字节，分配在 PSRAM。
+没有 sprite 的话，逐图元绘制会让数字雨出现明显的撕裂。sprite 大小 240×135×2 = 64,800 字节，分配在**内部 DMA RAM**——M5GFX 的 `LGFX_Sprite` 默认 `_psram = false`，所以 `createSprite()` 即使在有 PSRAM 的板子上也不会去碰 PSRAM。（两个 build 都不用 PSRAM：StickS3 的 8MB PSRAM 闲置，Cardputer 目标直接用 `board_build.psram = disable` 编译。）
 
-**坑在这里：** `canvas.createSprite(240, 135)` 是可能返回 `false` 的（PSRAM 碎片、`M5.begin()` 调用顺序、旋转设置不当）。一旦失败，canvas 上的**所有**绘制调用会静默变成空操作，屏幕就停在最后一次 `fillScreen` 的状态——黑屏，不崩溃、不 panic、串口也没有任何输出。这正是 v0.1 的黑屏 bug。
+**坑在这里：** `canvas.createSprite(240, 135)` 是可能返回 `false` 的（内部 RAM 不足、`M5.begin()` 调用顺序、旋转设置不当）。一旦失败，canvas 上的**所有**绘制调用会静默变成空操作，屏幕就停在最后一次 `fillScreen` 的状态——黑屏，不崩溃、不 panic、串口也没有任何输出。这正是 v0.1 的黑屏 bug。
 
-**修法是加有效性标志，而不是重试循环：** sprite 创建失败时，渲染路径直接画到 `M5.Display`。慢一些，数字雨会有一点撕裂，但时钟依然可读——一块画面不够漂亮的钟，好过一块什么都不显示的钟。
+**修法是启动期熔断，而不是重试循环：** `setup()` 在 `ArcDisplay::begin()` 之后检查 `canvas.getBuffer()`，若 sprite 没分配成功，就直接往 `M5.Display` 打一行 `SPRITE FAIL` 并停止渲染——把"静默黑屏"变成一行可读结论。故意不做"降级直绘"：两块板子的 64KB 内部 RAM 都是够的，这里失败意味着结构性问题，应该被看见，而不是被掩盖。
 
 ```cpp
-if (g_spriteOk) { ...画到 canvas...; push(); }
-else            { ...直接画到 M5.Display...; }
+// setup() 里，ArcDisplay::begin() 之后
+if (!ArcDisplay::canvas.getBuffer()) {
+  M5.Display.fillScreen(TFT_BLACK);
+  M5.Display.setTextColor(TFT_RED);
+  M5.Display.setTextSize(2);
+  M5.Display.setCursor(12, 58);
+  M5.Display.print("SPRITE FAIL");
+  while (true) delay(1000);
+}
 ```
 
 两个相关细节：

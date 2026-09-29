@@ -7,6 +7,52 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 the project uses `MAJOR.MINOR.PATCH` with a strong preference for small patch
 steps — visual overhauls and feature work land in the same minor line.
 
+## [1.1.1] — 2026-09-29
+
+Maintenance release: a full code review of both targets (fixes only, no visual
+changes), plus the Cardputer's PSRAM configuration corrected.
+
+### Fixed
+
+- **USB power detection.** Power save was gated on `M5.Power.isCharging()`, which
+  reads the charger's STAT pin — that goes `false` the instant the battery is
+  full, so a desk clock on a cable still dimmed to zero and entered Light Sleep.
+  Now gated on a 1 s-cached VBUS voltage reading.
+- **Light Sleep button wake.** The `ext0` wake source was armed on GPIO0 (a
+  Stick-Bus I²C line) instead of `BtnA`'s GPIO11, so a short tap could not wake
+  the clock; the post-wake button sampling window was also too narrow (10 ms).
+- **WiFi radio left on after a cancelled/failed setup pass** (StickS3): a scan
+  that found nothing, or a cancelled SSID/password prompt, returned without
+  `launcherWifiStop()`, keeping the radio powered for the rest of the session.
+- **Microphone treated as dead after one hiccup.** A single transient
+  `M5.Mic.record()` failure (full buffer slot) permanently disabled the spectrum
+  until the next wake; three consecutive failures are now required.
+- **Keyboard direction inverted on the Cardputer timezone screen** (`;` scrolled
+  down while the WiFi list scrolled up) — both lists now use `;` = up, `.` = down.
+- `createSprite()` failure is now a readable `SPRITE FAIL` on screen instead of a
+  silent black panel.
+- Cardputer: the on-screen keyboard's 10th cell ran 11 px past the right edge.
+
+### Changed
+
+- Power save no longer requires a valid NTP time (a clock that never reached the
+  network now still saves power) and the idle timer starts from the end of setup
+  on every path.
+- Cardputer target: `board_build.psram = disable`, no `-DBOARD_HAS_PSRAM`, no
+  `memory_type` override — Cardputer-Adv (ESP32-S3FN8) has no PSRAM, and neither
+  build uses it. Flash usage drops ~36 KB.
+- Both targets: build includes resolve through `${PROJECT_DIR}` so the dev tree
+  and the published tree can build with the same `platformio.ini` line.
+- Dead code removed (`RAIN_NAMES`, an unreachable Enter branch, a duplicate IMU
+  `begin()`, a self-assigning `getAttitude()` call).
+
+### Notes
+
+- Release images (merged, DIO flash mode) and their SHA-256 are in
+  [`dist/`](dist); `tools/make-release.sh` reproduces them.
+- Battery meter, rain engine, themes and layout are byte-for-byte the same
+  behaviour as 1.1.0 — this release only fixes state handling.
+
 ## [1.1.0] — 2026-08-01
 
 First public release. Cardputer reaches feature parity with the StickS3 build.

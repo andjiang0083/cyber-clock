@@ -44,10 +44,6 @@ static const char* RAIN_CHARSETS[(int)RainMode::MODES_N] = {
   "#*+:.<>/|~@%&$",
   "ABCDEFGHIJKLMNOPQRSTUVWXYZ",
 };
-static const char* RAIN_NAMES[(int)RainMode::MODES_N] = {
-  "MATRIX", "NUMBERS", "BINARY", "HEX", "SYMBOLS", "ALPHA"
-};
-
 // ── Matrix rain (column-drop) ──
 static const int TRAIL_LEN = 5;
 #define MATRIX_N MATRIX_DROPS
@@ -102,8 +98,23 @@ static void updateIMU();
 static void checkShake();
 static void pickTimezone();
 static int tzLoad();
-static int getKeyEdge();
 static RainMode nextRainMode(RainMode m);
+
+// ── USB 供电判定 (缓存 1s) ──
+// 不要用 M5.Power.isCharging(): 那是充电器的 STAT 脚, 充满后立刻变 false。
+// Cardputer 没有 PMIC → getVBUSVoltage() 返回 -1, 这里恒为 false (与旧行为一致, 无回归);
+// 有 M5PM1 的 StickS3 才返回真实 VBUS 电压(mV)。
+static bool g_usbPlugged = false;
+static uint32_t g_usbLastRead = 0;
+static bool usbPowerPresent() {
+  uint32_t now = millis();
+  if (now - g_usbLastRead >= 1000) {
+    g_usbLastRead = now;
+    int16_t mv = M5.Power.getVBUSVoltage();
+    g_usbPlugged = (mv > 1000);
+  }
+  return g_usbPlugged;
+}
 
 // ── Setup ──
 void setup() {
@@ -116,6 +127,17 @@ void setup() {
 
   // Landscape 240×135
   ArcDisplay::begin(SCREEN_ROTATION, BRIGHTNESS_LEVELS[g_brightnessIdx]);
+
+  // sprite 分配失败 → canvas 的绘制会静默失效: 整屏黑、不崩溃、日志空白
+  // (docs/bugfix-black-screen-spec.md)。显式熔断, 把黑屏变成可读信息。
+  if (!ArcDisplay::canvas.getBuffer()) {
+    M5.Display.fillScreen(TFT_BLACK);
+    M5.Display.setTextColor(TFT_RED);
+    M5.Display.setTextSize(2);
+    M5.Display.setCursor(12, 58);
+    M5.Display.print("SPRITE FAIL");
+    while (true) delay(1000);
+  }
 
   initThemes();
   initMatrixRain();
@@ -174,11 +196,12 @@ void setup() {
   int savedTz = tzLoad();
   if (savedTz != 999) { g_tzOffset = savedTz; g_tzConfigured = true; }
 
-  // WiFi setup
-  if (wifiSetupBegin(false)) {
-    if (!g_tzConfigured) {
+  // WiFi setup — 成功/失败/取消三条路径都要关射频并复位空闲计时
+  {
+    bool wifiOk = wifiSetupBegin(false);
+    if (wifiOk && !g_tzConfigured) {
       pickTimezone();
-      syncNTP();
+      syncNTP();     // 需在关射频之前完成
     }
     wifiStopAll();
     g_lastActivity = millis();
@@ -229,8 +252,7 @@ static int getKey() {
     }
   }
 
-  if (ks.enter) return '\n';
-  return 0;
+  return 0;   // Enter 分支已删: ks.enter 时 ks.word 必为空, 上面早退已拦住 (不可达代码)
 }
 
 // ── Loop ──
@@ -238,10 +260,17 @@ void loop() {
   uint32_t now = millis();
 
   // ── Power save ──
-  bool charging = M5.Power.isCharging();
-  if (!g_powerSave && g_timeValid && now - g_lastActivity > IDLE_POWERSAVE_MS && !charging) {
+  // 插着 USB 就跳过省电; 不再要求 g_timeValid (没对时的设备也要省电)
+  bool plugged = usbPowerPresent();
+  if (!g_powerSave && now - g_lastActivity > IDLE_POWERSAVE_MS && !plugged) {
     g_powerSave = true;
     setCpuFrequencyMhz(80);
+  }
+  // 省电中插上 USB → 立刻恢复正常刷新
+  if (plugged && g_powerSave) {
+    g_powerSave = false;
+    setCpuFrequencyMhz(240);
+    g_lastRenderSec = -1;
   }
 
   // ── Input via keyboard (edge-detected) ──
@@ -384,8 +413,9 @@ static void pickTimezone() {
     M5Cardputer.update();
     auto ks = M5Cardputer.Keyboard.keysState();
     for (auto k : ks.word) {
-      if (k == ';' || k == ':') idx = (idx + 1) % N;   // 下
-      if (k == '.' || k == '>') idx = (idx - 1 + N) % N; // 上
+      // 与 WiFi 列表(pickSSID)统一: ';' = 上, '.' = 下 (旧代码两处相反, 用户会按错方向)
+      if (k == ';' || k == ':') idx = (idx - 1 + N) % N; // 上
+      if (k == '.' || k == '>') idx = (idx + 1) % N;     // 下
       if (k == 'n' || k == 'N') {                       // 确认(N键)
         g_tzOffset = tzVals[idx];
         tzSave(g_tzOffset);
@@ -406,8 +436,8 @@ static void pickTimezone() {
     canvas.print("Select Timezone");
     canvas.setTextSize(1);
     canvas.setTextColor(c565(120, 120, 120), TFT_BLACK);
-    canvas.setCursor((240 - 28 * 6) / 2, 118);
-    canvas.print("[;]=Down  [.]=Up  [N]=Confirm");
+    canvas.setCursor((240 - 29 * 6) / 2, 118);
+    canvas.print("[;]=Up  [.]=Down  [N]=Confirm");
     int start = idx - 2;
     if (start < 0) start = 0;
     if (start > N - 5) start = N - 5;
@@ -578,10 +608,14 @@ static uint16_t hueToRGB565(int hue, uint8_t bri) {
 }
 
 // ── Audio init / stop / update ──
+// 麦克风连续失败计数: record() 的瞬态失败(缓冲槽占满/锁竞争)不算硬件故障
+static int g_micFailStreak = 0;
+
 static void initAudio() {
   if (g_micActive || g_micFailed) return;
   g_micActive = M5.Mic.begin();
   g_audioLastSample = 0;
+  g_micFailStreak = 0;
   if (!g_micActive) { g_micFailed = true; return; }
   memset(g_audioBars, 0, AUDIO_BARS);
   memset(g_audioTargets, 0, AUDIO_BARS);
@@ -598,11 +632,17 @@ static void updateAudio() {
   if (now - g_audioLastSample < AUDIO_INTERVAL_MS) return;
   g_audioLastSample = now;
   if (!M5.Mic.record(g_micBuf, AUDIO_SAMPLES)) {
-    stopAudio();
-    g_micFailed = true;
-    memset(g_audioBars, 0, AUDIO_BARS);
+    // 瞬态失败不计故障 (Mic_Class.hpp: 缓冲槽占满/锁竞争时 record() 也会 false),
+    // 连续 3 次才判硬件故障 — 否则一次卡顿波形就永久消失。
+    if (++g_micFailStreak >= 3) {
+      stopAudio();
+      g_micFailed = true;
+      g_micFailStreak = 0;
+      memset(g_audioBars, 0, AUDIO_BARS);
+    }
     return;
   }
+  g_micFailStreak = 0;
   int samplesPerBar = AUDIO_SAMPLES / AUDIO_BARS;
   for (int b = 0; b < AUDIO_BARS; b++) {
     int sum = 0;
@@ -654,8 +694,7 @@ static void drawAudioBars() {
 
 // ── IMU ──
 static void updateIMU() {
-  static bool imuInited = false;
-  if (!imuInited) { g_imu.begin(); imuInited = true; }
+  // setup() 里已经 g_imu.begin(); 这里不再重复 begin (旧代码会 begin 两次)
   if (!g_imu.available()) return;
   static uint32_t lastIMU = 0;
   uint32_t now = millis();

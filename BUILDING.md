@@ -121,7 +121,7 @@ By hand, for the StickS3:
 ```bash
 ESPTOOL=~/.platformio/packages/tool-esptoolpy/esptool.py
 python3 $ESPTOOL --chip esp32s3 merge_bin \
-  --output dist/cyber-clock-v1.1.0-merged.bin \
+  --output dist/cyber-clock-v1.1.1-merged.bin \
   --flash_mode dio --flash_freq 80m --flash_size 8MB \
   0x0000 .pio/build/sticks3/bootloader.bin \
   0x8000 .pio/build/sticks3/partitions.bin \
@@ -133,7 +133,7 @@ and for the Cardputer, from `cardputer/`:
 
 ```bash
 python3 $ESPTOOL --chip esp32s3 merge_bin \
-  --output ../dist/cyber-clock-cardputer-v1.1.0-merged.bin \
+  --output ../dist/cyber-clock-cardputer-v1.1.1-merged.bin \
   --flash_mode dio --flash_freq 80m --flash_size 8MB \
   0x0000 .pio/build/cardputer/bootloader.bin \
   0x8000 .pio/build/cardputer/partitions.bin \
@@ -145,10 +145,10 @@ python3 $ESPTOOL --chip esp32s3 merge_bin \
 
 ```bash
 # 1. the flash-mode byte in the bootloader header must be 0x02 (DIO)
-python3 -c "d=open('dist/cyber-clock-v1.1.0-merged.bin','rb').read(); print('DIO' if d[2]==0x02 else hex(d[2]))"
+python3 -c "d=open('dist/cyber-clock-v1.1.1-merged.bin','rb').read(); print('DIO' if d[2]==0x02 else hex(d[2]))"
 
 # 2. checksum
-shasum -a 256 dist/cyber-clock-v1.1.0-merged.bin
+shasum -a 256 dist/cyber-clock-v1.1.1-merged.bin
 ```
 
 A merged image built with QIO (`0x00`) flashes fine with esptool but is rejected
@@ -164,11 +164,20 @@ The release images were built from this repository with:
 | Component | Version |
 |---|---|
 | PlatformIO Core | 6.1.19 |
-| `platform = espressif32` (resolved) | 7.0.1 |
+| `platform = espressif32` (resolved) | pioarduino fork, **55.03.39** (`git+https://github.com/pioarduino/platform-espressif32.git#55.03.39`) |
 | Arduino core for ESP32 | 3.3.9 |
+| ESP-IDF (bundled with the Arduino core) | 5.5.4 |
 | M5Unified | 0.2.23 |
 | M5GFX | 0.2.30 |
 | esptool | 5.3.0 |
+
+> **`platform = espressif32` is ambiguous.** The name resolves to whichever
+> *installed* build reports the highest version, so on a machine that has only
+> fetched the official platform you get 7.0.1 / Arduino core 2.x, while this
+> release was built with the pioarduino fork at 55.03.39 / Arduino core 3.3.9.
+> Check the first line of a build (`pio run`): it prints
+> `PLATFORM: Espressif 32 (55.3.39+sha…) (git+https://github.com/pioarduino/…)`.
+> If it differs, the image will not match the released one byte for byte.
 
 `platformio.ini` does **not** pin library versions (`m5stack/M5Unified` without a
 version constraint), so a fresh clone today may pull a newer M5Unified than the
@@ -192,11 +201,12 @@ already cached, which is why a single number would be misleading:
 Checked by cloning the published repository and building both targets from
 scratch:
 
-- the resulting images are **exactly the same size** as the released ones
-  (1,242,592 B and 1,242,384 B);
-- they differ in **70 bytes**: the 32-byte ELF SHA-256 in the application
-  descriptor, the 32-byte image digest esptool appends at the end, and 6 bytes of
-  `__TIME__` in the descriptor's version string. Nothing else differs.
+- the two builds of the same target come out **exactly the same size**
+  (StickS3 app image 1,176,848 B, Cardputer 1,140,608 B);
+- they differ in **71 bytes** (StickS3) / **67 bytes** (Cardputer): the 32-byte
+  ELF SHA-256 in the application descriptor, the 32-byte image digest esptool
+  appends at the end, and 6 bytes of `__TIME__` in the descriptor's version
+  string. Nothing else differs.
 
 So the code is reproducible; the timestamps embedded by the toolchain are not.
 If you need bit-identical output, build with `SOURCE_DATE_EPOCH` set and compare

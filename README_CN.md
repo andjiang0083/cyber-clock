@@ -11,7 +11,7 @@
 | ![M5StickS3 上的 CYBER CLOCK：时间 10:43、日期 2026-07-08 WED、满格电量，背景是数字雨](docs/images/cyber-clock-sticks3-matrix-green.jpg) | ![M5Cardputer 上的 CYBER CLOCK：琥珀色的 22:35 压在绿色数字雨上，日期 2026-07-08 WED，屏幕下方是 Cardputer 的黑色椭圆按键](docs/images/cyber-clock-cardputer-ember-orange.jpg) |
 | 双按键。可进 Light Sleep + 硬件唤醒。 | 物理键盘。下限是 80MHz + 1fps。 |
 
-*两张图均为 `FULL` 模式、v1.0.1 构建、2026-07-08 拍摄；v1.1.0 界面零变化。*
+*两张图均为 `FULL` 模式、v1.0.1 构建、2026-07-08 拍摄；v1.1.1 界面零变化。*
 
 两个固件版本都在本仓库：`src/` 是 **M5StickS3** 版（双按键），`cardputer/` 是 **M5Cardputer** 版（物理键盘，界面完全一致）。两者共用同一套代码——画面、数字雨引擎、主题、配网、时区选择都是同一份实现，只有输入层和最深的睡眠档不同。
 
@@ -23,7 +23,7 @@
 
 | | **M5StickS3**（`src/`） | **M5Cardputer**（`cardputer/`） |
 |---|---|---|
-| 板卡 | M5Stack StickS3 — ESP32-S3，8MB Flash，8MB Octal PSRAM | M5Stack Cardputer — ESP32-S3，8MB Flash，8MB Octal PSRAM |
+| 板卡 | M5Stack StickS3 — ESP32-S3，8MB Flash，8MB Octal PSRAM | M5Stack Cardputer · Cardputer-Adv — ESP32-S3(FN8)，8MB Flash，**无 PSRAM** |
 | 屏幕 | 1.14″ 240×135 ST7789，SPI，横屏 | 1.14″ 240×135 ST7789，SPI，横屏 |
 | 输入 | `BtnA`（左）/ `BtnB`（右），短按 + 长按 | 物理 QWERTY 键盘 |
 | 麦克风 | ES8311 | 板载麦克风 |
@@ -37,7 +37,7 @@
 
 ## 现状
 
-以下都是 **v1.1.0** 两个版本的真实状态，不是规划项。
+以下都是 **v1.1.1** 两个版本的真实状态，不是规划项。
 
 | 模块 | 状态 | 说明 |
 |---|---|---|
@@ -61,7 +61,7 @@
 
 ### 已知限制
 
-1. **Cardputer 无法 Light Sleep。** 它的按键走 I²C 扫描，没有能唤醒 CPU 的 GPIO。80MHz + 1fps 就是它的下限。StickS3 能到 ~0.3mA，是因为 `BtnA` 接在 GPIO0 上，可以作为 `ext0` 唤醒源。
+1. **Cardputer 无法 Light Sleep。** 它的按键走 I²C 扫描，没有能唤醒 CPU 的 GPIO。80MHz + 1fps 就是它的下限。StickS3 能到 ~0.3mA，是因为 `BtnA` 接在 GPIO11 上，可以作为 `ext0` 唤醒源。
 2. **时区是偏移量，不是规则。** 选 `UTC+8` 就是永远 UTC+8，不会自动切夏令时。
 3. **只支持 ASCII。** GLCD 字体和屏幕键盘都止于 ASCII，所以中文 SSID 显示为 `□`。
 
@@ -71,12 +71,12 @@
 
 ### 方式一：刷发布镜像（不需要工具链）
 
-1. 从 [Releases](../../releases) 下载 `cyber-clock-v1.1.0-merged.bin`（StickS3）或 `cyber-clock-cardputer-v1.1.0-merged.bin`（Cardputer）。
+1. 从 [Releases](../../releases) 下载 `cyber-clock-v1.1.1-merged.bin`（StickS3）或 `cyber-clock-cardputer-v1.1.1-merged.bin`（Cardputer）。
 2. **M5Burner**：*Custom* → *Import Custom FW* → 选 `.bin`（或 `m5burner/` 里的打包文件）→ 选中 **Cyber Clock** → *Burn*。
 3. **esptool** 命令行方式：
 
    ```bash
-   esptool.py --chip esp32s3 --baud 921600 write_flash 0x0 cyber-clock-v1.1.0-merged.bin
+   esptool.py --chip esp32s3 --baud 921600 write_flash 0x0 cyber-clock-v1.1.1-merged.bin
    ```
 
    合并镜像内含 bootloader + 分区表 + 应用，从偏移 `0x0` 写入。下载后用 release notes 里的 `sha256` 校验。
@@ -174,7 +174,7 @@ pio run --target upload --upload-port /dev/cu.usbmodemXXXX
 | 降频 | 60s 无操作 | 80MHz | 1fps（秒数变化时才画） | 关 | 开 |
 | **Light Sleep**（仅 StickS3） | 180s 无操作 | 暂停 | 200ms 轮询唤醒后每秒一帧 | 关 | **关** |
 
-任意输入 ≤200ms 恢复全速。Light Sleep 期间由 RTC 定时器每 200ms 唤醒 CPU 轮询按键，同时 `BtnA`（GPIO0）额外配置为 `ext0` 唤醒源，所以按下即时响应。Cardputer 没有最深那一档，原因见上文。
+任意输入 ≤200ms 恢复全速。Light Sleep 期间由 RTC 定时器每 200ms 唤醒 CPU 轮询按键，同时 `BtnA`（GPIO11，`BtnB` 是 GPIO12）额外配置为 `ext0` 唤醒源，所以按下即时响应。Cardputer 没有最深那一档，原因见上文。
 
 [ARCHITECTURE_CN.md](docs/ARCHITECTURE_CN.md) 里的电流数字是 ESP32-S3 数据手册的设计目标值，**不是电流表实测**——如果你有功耗仪，[ROADMAP_CN.md](ROADMAP_CN.md) 里正好缺这一项。
 

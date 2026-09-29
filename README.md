@@ -11,7 +11,7 @@
 | ![CYBER CLOCK on an M5StickS3: the time 10:43, the date 2026-07-08 WED, a full battery indicator and the digital rain behind it](docs/images/cyber-clock-sticks3-matrix-green.jpg) | ![CYBER CLOCK on an M5Cardputer: the time 22:35 in amber over the green rain, the date 2026-07-08 WED, and the black oval keys of the Cardputer keyboard below](docs/images/cyber-clock-cardputer-ember-orange.jpg) |
 | Two buttons. Light Sleep with hardware wake. | Physical keyboard. 80 MHz + 1 fps is its floor. |
 
-*Both photos: `FULL` mode, v1.0.1 build, taken 2026-07-08 — the UI is unchanged in v1.1.0.*
+*Both photos: `FULL` mode, v1.0.1 build, taken 2026-07-08 — the UI is unchanged in v1.1.1.*
 
 Both firmware builds live in this repository: `src/` is the **M5StickS3** build (two buttons), `cardputer/` is the **M5Cardputer** build (physical keyboard, same UI). They share one code base — the graphics, rain engine, themes, WiFi provisioning and timezone picker are the same code; only the input layer and the sleep depth differ.
 
@@ -23,7 +23,7 @@ The M5Stack Tab5 port of the same rain engine lives in its own project: [matrix-
 
 | | **M5StickS3** (`src/`) | **M5Cardputer** (`cardputer/`) |
 |---|---|---|
-| Board | M5Stack StickS3 — ESP32-S3, 8 MB flash, 8 MB octal PSRAM | M5Stack Cardputer — ESP32-S3, 8 MB flash, 8 MB octal PSRAM |
+| Board | M5Stack StickS3 — ESP32-S3, 8 MB flash, 8 MB octal PSRAM | M5Stack Cardputer · Cardputer-Adv — ESP32-S3(FN8), 8 MB flash, **no PSRAM** |
 | Display | 1.14″ 240×135 ST7789, SPI, landscape | 1.14″ 240×135 ST7789, SPI, landscape |
 | Input | `BtnA` (left) / `BtnB` (right), short + long press | physical QWERTY keyboard |
 | Microphone | ES8311 | built-in mic |
@@ -37,7 +37,7 @@ The M5Stack Tab5 port of the same rain engine lives in its own project: [matrix-
 
 ## Status
 
-Everything below is the state of the **v1.1.0** builds. Nothing here is a roadmap item.
+Everything below is the state of the **v1.1.1** builds. Nothing here is a roadmap item.
 
 | Module | State | Notes |
 |---|---|---|
@@ -53,7 +53,7 @@ Everything below is the state of the **v1.1.0** builds. Nothing here is a roadma
 | Battery indicator | ✅ works | 4 bars, top-right, I²C read cached for 1 s |
 | WiFi provisioning | ✅ works | scan → list → password → connect → NVS; the StickS3 uses an on-screen keyboard driven by two buttons |
 | Idle power save | ✅ works | 60 s → 80 MHz + 1 fps; StickS3 only: 180 s → Light Sleep |
-| USB charging override | ✅ works | plugged in ⇒ every power-save stage is disabled and the clock runs at full speed |
+| USB charging override | ✅ works | plugged in ⇒ every power-save stage is disabled and the clock runs at full speed. Detected from **VBUS voltage** (cached 1 s) — not from the charger's STAT pin, which goes false the moment the battery is full |
 | Non-ASCII SSIDs | ⚠️ known | Chinese/emoji SSIDs display as boxes — the font and the on-screen keyboard are ASCII-only |
 | Cardputer Light Sleep | ❌ not possible | the keyboard is on a TCA8418 I²C expander with no wake line |
 | OTA update | ❌ not implemented | flashing is over USB-C |
@@ -61,7 +61,7 @@ Everything below is the state of the **v1.1.0** builds. Nothing here is a roadma
 
 ### Known limits
 
-1. **The Cardputer cannot Light Sleep.** Its keys are scanned over I²C, so there is no GPIO to wake the CPU from. 80 MHz with a 1 fps refresh is the floor. The StickS3 reaches ~0.3 mA because `BtnA` sits on GPIO0 and can be armed as an `ext0` wake source.
+1. **The Cardputer cannot Light Sleep.** Its keys are scanned over I²C, so there is no GPIO to wake the CPU from. 80 MHz with a 1 fps refresh is the floor. The StickS3 reaches ~0.3 mA because `BtnA` sits on GPIO11 and is armed as an `ext0` wake source.
 2. **Timezones are offsets, not rules.** Selecting `UTC+8` means UTC+8 forever — no DST transition.
 3. **ASCII only.** Both the GLCD font and the on-screen keyboard stop at ASCII, so a Chinese SSID shows as `□`.
 
@@ -71,12 +71,12 @@ Everything below is the state of the **v1.1.0** builds. Nothing here is a roadma
 
 ### Option 1 — flash a release image (no toolchain needed)
 
-1. Download `cyber-clock-v1.1.0-merged.bin` (StickS3) or `cyber-clock-cardputer-v1.1.0-merged.bin` (Cardputer) from [Releases](../../releases).
+1. Download `cyber-clock-v1.1.1-merged.bin` (StickS3) or `cyber-clock-cardputer-v1.1.1-merged.bin` (Cardputer) from [Releases](../../releases).
 2. **M5Burner**: *Custom* → *Import Custom FW* → pick the `.bin` (or the `m5burner/` bundle) → select **Cyber Clock** → *Burn*.
 3. **esptool**, if you prefer the command line:
 
    ```bash
-   esptool.py --chip esp32s3 --baud 921600 write_flash 0x0 cyber-clock-v1.1.0-merged.bin
+   esptool.py --chip esp32s3 --baud 921600 write_flash 0x0 cyber-clock-v1.1.1-merged.bin
    ```
 
    The merged image contains the bootloader, partition table and application, and is written from offset `0x0`. Verify the download against the `sha256` in the release notes.
@@ -174,7 +174,7 @@ Three stages, all disabled while USB power is connected (charging ⇒ full speed
 | Idle | 60 s without input | 80 MHz | 1 fps (renders when the second changes) | off | on |
 | **Light Sleep** (StickS3 only) | 180 s without input | paused | one frame per second, after a 200 ms poll wake | off | **off** |
 
-Any input restores full speed in ≤ 200 ms. In Light Sleep an RTC timer wakes the CPU every 200 ms to poll the buttons, and `BtnA` (GPIO0) is additionally armed as an `ext0` wake source so it responds instantly. On the Cardputer the deepest stage does not exist, for the hardware reason above.
+Any input restores full speed in ≤ 200 ms. In Light Sleep an RTC timer wakes the CPU every 200 ms to poll the buttons, and `BtnA` (GPIO11 — GPIO12 is `BtnB`) is additionally armed as an `ext0` wake source so it responds instantly. On the Cardputer the deepest stage does not exist, for the hardware reason above.
 
 The current figures in [ARCHITECTURE.md](docs/ARCHITECTURE.md) are design targets taken from the ESP32-S3 datasheet, not ammeter readings — see [ROADMAP.md](ROADMAP.md) if you own a power meter and want to close that gap.
 

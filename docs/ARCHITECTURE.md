@@ -55,22 +55,36 @@ push();                     // single atomic sprite → panel copy
 ```
 
 Without the sprite, per-primitive drawing produces visible tearing on the rain.
-The sprite is 240×135×2 bytes = 64,800 bytes, allocated from PSRAM.
+The sprite is 240×135×2 bytes = 64,800 bytes, allocated from **internal DMA-capable
+RAM** — M5GFX's `LGFX_Sprite` defaults to `_psram = false`, so `createSprite()`
+does not touch PSRAM even on a board that has it. (Neither build uses PSRAM; the
+StickS3 keeps its 8 MB PSRAM unused and the Cardputer target is compiled with
+`board_build.psram = disable`.)
 
-**The trap:** `canvas.createSprite(240, 135)` can return `false` (PSRAM
-fragmentation, an early `M5.begin()` ordering issue, a wrong rotation setup). When
-it fails, *every* draw call on the canvas silently becomes a no-op, and the screen
-sits on whatever the last `fillScreen` left — a black panel with no crash, no
-panic and no serial output. That is exactly the v0.1 black-screen bug.
+**The trap:** `canvas.createSprite(240, 135)` can return `false` (out of internal
+RAM, an early `M5.begin()` ordering issue, a wrong rotation setup). When it fails,
+*every* draw call on the canvas silently becomes a no-op, and the screen sits on
+whatever the last `fillScreen` left — a black panel with no crash, no panic and no
+serial output. That is exactly the v0.1 black-screen bug.
 
-**The fix** is a validity flag rather than a retry loop: if the sprite could not be
-created, the render path draws straight to `M5.Display` instead. Slower, some
-tearing in the rain, but the clock is still readable — and a clock that shows the
-wrong picture is better than a clock that shows nothing.
+**The fix** is a boot-time fuse rather than a retry loop: `setup()` checks
+`canvas.getBuffer()` right after `ArcDisplay::begin()` and, if the sprite could not
+be allocated, prints `SPRITE FAIL` straight to `M5.Display` and stops rendering —
+a silent black panel turns into a one-line diagnosis. Slower fallback rendering is
+deliberately *not* implemented: 64 KB of internal RAM is always available on both
+boards, so a failure here means something is structurally wrong and should be
+seen, not papered over.
 
 ```cpp
-if (g_spriteOk) { ...draw to canvas...; push(); }
-else            { ...draw to M5.Display directly...; }
+// setup(), right after ArcDisplay::begin()
+if (!ArcDisplay::canvas.getBuffer()) {
+  M5.Display.fillScreen(TFT_BLACK);
+  M5.Display.setTextColor(TFT_RED);
+  M5.Display.setTextSize(2);
+  M5.Display.setCursor(12, 58);
+  M5.Display.print("SPRITE FAIL");
+  while (true) delay(1000);
+}
 ```
 
 Two related details:

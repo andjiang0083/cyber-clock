@@ -10,8 +10,8 @@ the merged images it names, zipped together:
 
 ```
 cyber-clock.json                        ← catalogue entry (two devices)
-cyber-clock-v1.1.0-merged.bin           ← merged flash image, StickS3
-cyber-clock-cardputer-v1.1.0-merged.bin ← merged flash image, Cardputer
+cyber-clock-v1.1.1-merged.bin           ← merged flash image, StickS3
+cyber-clock-cardputer-v1.1.1-merged.bin ← merged flash image, Cardputer
 ```
 
 Import: M5Burner → **Custom** → **Import Custom FW** → pick the `.zip` (or the
@@ -39,8 +39,8 @@ published in the release notes.
 
 ```
 cyber-clock.json                        ← 目录条目（两台设备）
-cyber-clock-v1.1.0-merged.bin           ← StickS3 合并镜像
-cyber-clock-cardputer-v1.1.0-merged.bin ← Cardputer 合并镜像
+cyber-clock-v1.1.1-merged.bin           ← StickS3 合并镜像
+cyber-clock-cardputer-v1.1.1-merged.bin ← Cardputer 合并镜像
 ```
 
 导入：M5Burner → **Custom** → **Import Custom FW** → 选 `.zip`（或直接选 `.json`）→ 选中 **Cyber Clock (StickS3)** 或 **Cyber Clock (Cardputer)** → **Burn**。

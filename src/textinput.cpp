@@ -45,7 +45,8 @@ bool textInput(const char* prompt, String& out, int maxLen) {
   // When cPos < N_CMDS, we're on a command; otherwise on CHARS[cPos - N_CMDS]
   const int TOTAL_ITEMS = N_CMDS + N_CHARS;
   const int VISIBLE     = 10; // chars shown per row
-  const int CW          = 24; // char cell width in px
+  const int CW          = 22; // 字符格宽 (px)。10 格: 起点 2 + 9*(22+1) → 末格 209..231 ≤ 240;
+                              // 旧值 24 会让第 10 格落到 227..251, 右侧被切掉一条
 
   while (!done) {
     uint32_t now = millis();

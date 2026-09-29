@@ -139,12 +139,13 @@ bool wifiRunSetupFlow() {
   if (n <= 0) {
     drawMsg("No networks found", "Try again later");
     delay(2000);
+    launcherWifiStop();   // 扫描时射频已开, 失败退出也必须关 (否则耗电到重启)
     return false;
   }
 
   // Pick SSID
   int sel = pickSSID(aps);
-  if (sel < 0) return false;
+  if (sel < 0) { launcherWifiStop(); return false; }
 
   String ssid = aps[sel].ssid.c_str();
 
@@ -153,6 +154,7 @@ bool wifiRunSetupFlow() {
   char prompt[32];
   snprintf(prompt, 32, "Password for %s", ssid.c_str());
   if (!textInput(prompt, pass, 64)) {
+    launcherWifiStop();
     return false;
   }
 

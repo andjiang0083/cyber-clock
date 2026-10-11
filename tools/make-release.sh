@@ -1,4 +1,6 @@
 #!/bin/sh
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 andjiang0083
 # ---------------------------------------------------------------------------
 # Build both targets and produce merged (M5Burner / esptool) images in dist/.
 #

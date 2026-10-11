@@ -1,3 +1,6 @@
+/* SPDX-License-Identifier: MIT
+ * Copyright (c) 2026 andjiang0083
+ */
 // ============================================================
 // core/arcadia.h — Arcadia 框架一键包含
 // 只需 #include 此文件即可使用全部GUI模块

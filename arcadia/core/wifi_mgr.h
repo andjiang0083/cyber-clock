@@ -1,3 +1,6 @@
+/* SPDX-License-Identifier: MIT
+ * Copyright (c) 2026 andjiang0083
+ */
 // ============================================================
 // core/wifi_mgr.h — Arcadia WiFi 配网管理器
 // AP配网 · 二维码 · WiFi扫描 · 键盘输入 · NVS存储

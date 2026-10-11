@@ -1,3 +1,6 @@
+/* SPDX-License-Identifier: MIT
+ * Copyright (c) 2026 andjiang0083
+ */
 #ifndef LAUNCHER_IDF_WIFI_H
 #define LAUNCHER_IDF_WIFI_H
 

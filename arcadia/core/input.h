@@ -1,3 +1,6 @@
+/* SPDX-License-Identifier: MIT
+ * Copyright (c) 2026 andjiang0083
+ */
 // ============================================================
 // core/input.h — Arcadia 统一输入抽象
 // 屏蔽 S3 (BtnA/B) 和 Cardputer (键盘) 的差异

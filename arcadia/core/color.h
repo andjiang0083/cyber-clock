@@ -1,3 +1,6 @@
+/* SPDX-License-Identifier: MIT
+ * Copyright (c) 2026 andjiang0083
+ */
 // ============================================================
 // core/color.h — Arcadia 颜色工具
 // RGB565 转换 · 混合 · HSV · 随机

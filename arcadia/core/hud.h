@@ -1,3 +1,6 @@
+/* SPDX-License-Identifier: MIT
+ * Copyright (c) 2026 andjiang0083
+ */
 // ============================================================
 // core/hud.h — Arcadia HUD (Heads-Up Display) 系统
 // 文本行管理 · 颜色主题 · 快捷 printf

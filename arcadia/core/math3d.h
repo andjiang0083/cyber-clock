@@ -1,3 +1,6 @@
+/* SPDX-License-Identifier: MIT
+ * Copyright (c) 2026 andjiang0083
+ */
 // ============================================================
 // core/math3d.h — Arcadia 3D 数学引擎
 // 向量 · 矩阵 · 旋转 · 投影

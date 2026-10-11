@@ -1,3 +1,6 @@
+/* SPDX-License-Identifier: MIT
+ * Copyright (c) 2026 andjiang0083
+ */
 // ────────────────────────────────────────────────────────────
 // wifisetup.h — WiFi configuration flow for cyber-clock
 // Uses idf_wifi (port from bmorcelli/Launcher) for scanning,

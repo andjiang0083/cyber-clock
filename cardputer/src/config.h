@@ -1,3 +1,6 @@
+/* SPDX-License-Identifier: MIT
+ * Copyright (c) 2026 andjiang0083
+ */
 // ============================================================
 // config.h — CYBER CLOCK 配置参数
 // 所有可调参数集中管理

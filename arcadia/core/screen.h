@@ -1,3 +1,6 @@
+/* SPDX-License-Identifier: MIT
+ * Copyright (c) 2026 andjiang0083
+ */
 // ============================================================
 // core/screen.h — Arcadia 画面系统
 // Splash 启动画面 · 帮助覆盖层 · 过渡效果

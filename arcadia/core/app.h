@@ -1,3 +1,6 @@
+/* SPDX-License-Identifier: MIT
+ * Copyright (c) 2026 andjiang0083
+ */
 // ============================================================
 // core/app.h — Arcadia 应用基类
 // 生命周期管理 · 自动演示 · 省电 · WiFi

@@ -1,3 +1,6 @@
+/* SPDX-License-Identifier: MIT
+ * Copyright (c) 2026 andjiang0083
+ */
 // ── timesync.h — shared NTP sync declaration ──
 #pragma once
 #include <cstdint>

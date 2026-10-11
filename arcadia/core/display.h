@@ -1,3 +1,6 @@
+/* SPDX-License-Identifier: MIT
+ * Copyright (c) 2026 andjiang0083
+ */
 // ============================================================
 // core/display.h — Arcadia 显示管理器
 // Canvas 双缓冲 · 旋转 · 亮度 · 尺寸

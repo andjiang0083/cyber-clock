@@ -1,3 +1,6 @@
+/* SPDX-License-Identifier: MIT
+ * Copyright (c) 2026 andjiang0083
+ */
 // ============================================================
 // core/powersave.h — Arcadia 省电管理
 // Light Sleep · ext0(BtnA)唤醒 · CPU频率调节

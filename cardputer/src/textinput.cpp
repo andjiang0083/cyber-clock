@@ -1,3 +1,6 @@
+/* SPDX-License-Identifier: MIT
+ * Copyright (c) 2026 andjiang0083
+ */
 // ────────────────────────────────────────────────────────────
 // textinput.cpp — Cardputer 物理键盘输入
 // 替代 S3 的屏幕键盘, 直接用 M5Cardputer 键盘输入

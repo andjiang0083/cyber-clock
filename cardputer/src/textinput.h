@@ -1,3 +1,6 @@
+/* SPDX-License-Identifier: MIT
+ * Copyright (c) 2026 andjiang0083
+ */
 // ────────────────────────────────────────────────────────────
 // textinput.h — StickS3 2-key on-screen text input widget
 // Ported from bmorcelli/Launcher mykeyboard.cpp concept,

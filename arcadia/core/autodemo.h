@@ -1,3 +1,6 @@
+/* SPDX-License-Identifier: MIT
+ * Copyright (c) 2026 andjiang0083
+ */
 // ============================================================
 // core/autodemo.h — Arcadia 自动演示系统
 // 空闲检测 → 自动演示 → 相机漂移 → 场景切换

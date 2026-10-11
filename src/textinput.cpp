@@ -1,3 +1,6 @@
+/* SPDX-License-Identifier: MIT
+ * Copyright (c) 2026 andjiang0083
+ */
 // ────────────────────────────────────────────────────────────
 // textinput.cpp — StickS3 2-key on-screen text input
 // ────────────────────────────────────────────────────────────

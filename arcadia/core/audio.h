@@ -1,3 +1,6 @@
+/* SPDX-License-Identifier: MIT
+ * Copyright (c) 2026 andjiang0083
+ */
 // ============================================================
 // core/audio.h — Arcadia 音频系统
 // 音效反馈 · 背景音 · 摩斯密码引擎

@@ -1,3 +1,6 @@
+/* SPDX-License-Identifier: MIT
+ * Copyright (c) 2026 andjiang0083
+ */
 // ============================================================
 // core/imu.h — Arcadia IMU 管理器
 // 互补滤波 · pitch/roll 输出

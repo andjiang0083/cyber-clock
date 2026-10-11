@@ -1,3 +1,6 @@
+/* SPDX-License-Identifier: MIT
+ * Copyright (c) 2026 andjiang0083
+ */
 // ============================================================
 // core/stars.h — Arcadia 3D 星场系统
 // 多层星场 · 星云 · 远景深空 · 渲染

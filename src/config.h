@@ -10,7 +10,7 @@
 #include <cstdint>
 
 // ── 版本 (splash 显示) ──
-#define VERSION "v1.1.1"
+#define VERSION "v1.1.2"
 
 // ── 显示 ──
 static const int SCREEN_ROTATION = 1;

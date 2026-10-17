@@ -11,7 +11,7 @@
 | ![CYBER CLOCK on an M5StickS3: the time 10:43, the date 2026-07-08 WED, a full battery indicator and the digital rain behind it](docs/images/cyber-clock-sticks3-matrix-green.jpg) | ![CYBER CLOCK on an M5Cardputer: the time 22:35 in amber over the green rain, the date 2026-07-08 WED, and the black oval keys of the Cardputer keyboard below](docs/images/cyber-clock-cardputer-ember-orange.jpg) |
 | Two buttons. Light Sleep with hardware wake. | Physical keyboard. 80 MHz + 1 fps is its floor. |
 
-*Both photos: `FULL` mode, v1.0.1 build, taken 2026-07-08 — the UI is unchanged in v1.1.1.*
+*Both photos: `FULL` mode, v1.0.1 build, taken 2026-07-08 — the clock face is unchanged; provisioning got a big-text redesign in v1.1.2.*
 
 Both firmware builds live in this repository: `src/` is the **M5StickS3** build (two buttons), `cardputer/` is the **M5Cardputer** build (physical keyboard, same UI). They share one code base — the graphics, rain engine, themes, WiFi provisioning and timezone picker are the same code; only the input layer and the sleep depth differ.
 
@@ -37,7 +37,7 @@ The M5Stack Tab5 port of the same rain engine lives in its own project: [matrix-
 
 ## Status
 
-Everything below is the state of the **v1.1.1** builds. Nothing here is a roadmap item.
+Everything below is the state of the **v1.1.2** build (StickS3; Cardputer binary unchanged at v1.1.1). Nothing here is a roadmap item.
 
 | Module | State | Notes |
 |---|---|---|
@@ -71,12 +71,12 @@ Everything below is the state of the **v1.1.1** builds. Nothing here is a roadma
 
 ### Option 1 — flash a release image (no toolchain needed)
 
-1. Download `cyber-clock-v1.1.1-merged.bin` (StickS3) or `cyber-clock-cardputer-v1.1.1-merged.bin` (Cardputer) from [Releases](../../releases).
+1. Download `cyber-clock-v1.1.2-merged.bin` (StickS3) or `cyber-clock-cardputer-v1.1.1-merged.bin` (Cardputer) from [Releases](../../releases).
 2. **M5Burner**: *Custom* → *Import Custom FW* → pick the `.bin` (or the `m5burner/` bundle) → select **Cyber Clock** → *Burn*.
 3. **esptool**, if you prefer the command line:
 
    ```bash
-   esptool.py --chip esp32s3 --baud 921600 write_flash 0x0 cyber-clock-v1.1.1-merged.bin
+   esptool.py --chip esp32s3 --baud 921600 write_flash 0x0 cyber-clock-v1.1.2-merged.bin
    ```
 
    The merged image contains the bootloader, partition table and application, and is written from offset `0x0`. Verify the download against the `sha256` in the release notes.

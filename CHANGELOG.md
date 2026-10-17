@@ -7,6 +7,30 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 the project uses `MAJOR.MINOR.PATCH` with a strong preference for small patch
 steps — visual overhauls and feature work land in the same minor line.
 
+## [1.1.2] — 2026-10-17
+
+StickS3 provisioning overhaul (ported from Stick Clock v0.2.2). The Cardputer
+binary is unchanged in this release — its keyboard makes the two-button keypad moot.
+
+### Added
+
+- **Big-text WiFi picker.** Current network renders at 3× centred with the
+  neighbours above/below faintly visible, RSSI bars + dBm under it — no more
+  squinting at a size-1 list.
+- **Big-text password keypad.** Current character at 6× centred, ±1 and ±2
+  neighbours visible in descending sizes so you can see what sits next to the
+  selection before committing; no cell boxes.
+- **QR phone provisioning.** Hold `BtnA` on the WiFi picker — the clock opens
+  an open AP (`CyberClock-<MAC tail>`) and shows a QR code; scan it, type the
+  WiFi name + password on your phone (timezone auto-detected), done. Zero
+  typing on the device itself.
+- **Open networks connect without a password prompt.**
+
+### Fixed
+
+- Password ring last cell previously drew past the screen edge on StickS3
+  (10th slot was unreachable); superseded by the carousel layout.
+
 ## [1.1.1] — 2026-09-29
 
 Maintenance release: a full code review of both targets (fixes only, no visual

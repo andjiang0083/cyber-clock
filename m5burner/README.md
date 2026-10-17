@@ -10,7 +10,7 @@ the merged images it names, zipped together:
 
 ```
 cyber-clock.json                        ← catalogue entry (two devices)
-cyber-clock-v1.1.1-merged.bin           ← merged flash image, StickS3
+cyber-clock-v1.1.2-merged.bin           ← merged flash image, StickS3
 cyber-clock-cardputer-v1.1.1-merged.bin ← merged flash image, Cardputer
 ```
 
@@ -39,7 +39,7 @@ published in the release notes.
 
 ```
 cyber-clock.json                        ← 目录条目（两台设备）
-cyber-clock-v1.1.1-merged.bin           ← StickS3 合并镜像
+cyber-clock-v1.1.2-merged.bin           ← StickS3 合并镜像
 cyber-clock-cardputer-v1.1.1-merged.bin ← Cardputer 合并镜像
 ```
 

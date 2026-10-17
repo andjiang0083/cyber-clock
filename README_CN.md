@@ -11,9 +11,9 @@
 | ![M5StickS3 上的 CYBER CLOCK：时间 10:43、日期 2026-07-08 WED、满格电量，背景是数字雨](docs/images/cyber-clock-sticks3-matrix-green.jpg) | ![M5Cardputer 上的 CYBER CLOCK：琥珀色的 22:35 压在绿色数字雨上，日期 2026-07-08 WED，屏幕下方是 Cardputer 的黑色椭圆按键](docs/images/cyber-clock-cardputer-ember-orange.jpg) |
 | 双按键。可进 Light Sleep + 硬件唤醒。 | 物理键盘。下限是 80MHz + 1fps。 |
 
-*两张图均为 `FULL` 模式、v1.0.1 构建、2026-07-08 拍摄；v1.1.1 界面零变化。*
+*两张图均为 `FULL` 模式、v1.0.1 构建、2026-07-08 拍摄；表盘界面不变；配网在 v1.1.2 改成了大字版。*
 
-两个固件版本都在本仓库：`src/` 是 **M5StickS3** 版（双按键），`cardputer/` 是 **M5Cardputer** 版（物理键盘，界面完全一致）。两者共用同一套代码——画面、数字雨引擎、主题、配网、时区选择都是同一份实现，只有输入层和最深的睡眠档不同。
+两个固件版本都在本仓库：`src/` 是 **M5StickS3** 版（双按键），`cardputer/` 是 **M5Cardputer** 版（物理键盘，表盘界面完全一致）。两者共用同一套代码——画面、数字雨引擎、主题、时区选择都是同一份实现，只有输入层和最深的睡眠档不同；配网自 v1.1.2 起 StickS3 改为大字轮播 + QR 手机配网，Cardputer 用物理键盘维持原样。
 
 同一套数字雨引擎在 M5Stack Tab5 上的移植是另一个独立项目：[matrix-rain-tab5](https://github.com/andjiang0083/matrix-rain-tab5)（ESP32-P4，1280×720 MIPI-DSI）。
 
@@ -37,7 +37,7 @@
 
 ## 现状
 
-以下都是 **v1.1.1** 两个版本的真实状态，不是规划项。
+以下都是 **v1.1.2**（StickS3）的真实状态，Cardputer 镜像维持 v1.1.1 不变；不是规划项。
 
 | 模块 | 状态 | 说明 |
 |---|---|---|
@@ -71,12 +71,12 @@
 
 ### 方式一：刷发布镜像（不需要工具链）
 
-1. 从 [Releases](../../releases) 下载 `cyber-clock-v1.1.1-merged.bin`（StickS3）或 `cyber-clock-cardputer-v1.1.1-merged.bin`（Cardputer）。
+1. 从 [Releases](../../releases) 下载 `cyber-clock-v1.1.2-merged.bin`（StickS3）或 `cyber-clock-cardputer-v1.1.1-merged.bin`（Cardputer）。
 2. **M5Burner**：*Custom* → *Import Custom FW* → 选 `.bin`（或 `m5burner/` 里的打包文件）→ 选中 **Cyber Clock** → *Burn*。
 3. **esptool** 命令行方式：
 
    ```bash
-   esptool.py --chip esp32s3 --baud 921600 write_flash 0x0 cyber-clock-v1.1.1-merged.bin
+   esptool.py --chip esp32s3 --baud 921600 write_flash 0x0 cyber-clock-v1.1.2-merged.bin
    ```
 
    合并镜像内含 bootloader + 分区表 + 应用，从偏移 `0x0` 写入。下载后用 release notes 里的 `sha256` 校验。

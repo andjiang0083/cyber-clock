@@ -2,7 +2,7 @@
   {
     "_id": "cyber-clock-sticks3",
     "name": "Cyber Clock (StickS3)",
-    "description": "Cyberpunk desk clock for M5StickS3: NTP timekeeping, a column-trail digital-rain engine with 6 character sets, 6 neon palettes, 40-band microphone spectrum, IMU shake-to-theme and a three-stage power save (60 s down-clock, 180 s Light Sleep with button wake). | M5StickS3 赛博朋克桌面时钟：NTP 自动对时、6 种字符集的列轨迹数字雨、6 套霓虹配色、40 段麦克风频谱、摇一摇换主题，以及三段式省电（60 秒降频 / 180 秒 Light Sleep + 按键唤醒）。",
+    "description": "Cyberpunk desk clock for M5StickS3: NTP timekeeping, a column-trail digital-rain engine with 6 character sets, 6 neon palettes, 40-band microphone spectrum, IMU shake-to-theme and a three-stage power save (60 s down-clock, 180 s Light Sleep with button wake). Setup is big-text now: carousel WiFi picker, magnified password keypad, or hold BtnA and scan a QR code to enter credentials from your phone. | M5StickS3 赛博朋克桌面时钟：NTP 自动对时、6 种字符集的列轨迹数字雨、6 套霓虹配色、40 段麦克风频谱、摇一摇换主题，三段式省电（60 秒降频 / 180 秒 Light Sleep + 按键唤醒）。配网全是大字：轮播选 WiFi、密码放大可核对，长按 BtnA 出二维码手机扫码输。",
     "author": "andjiang0083",
     "category": "M5StickS3",
     "tags": ["clock", "matrix", "ntp", "cyberpunk"],
@@ -10,6 +10,13 @@
     "github": "https://github.com/andjiang0083/cyber-clock",
     "download": 0,
     "versions": [
+      {
+        "version": "1.1.2",
+        "published_at": "2026-10-17",
+        "file": "cyber-clock-v1.1.2-merged.bin",
+        "published": false,
+        "change_log": "Big-text provisioning on StickS3: carousel WiFi picker (current network 3× centred, neighbours visible), magnified password keypad (6× current char with ±1/±2 in view, no cell boxes), QR phone provisioning (hold BtnA → open AP CyberClock-<MAC tail>, scan and type WiFi + password on your phone, timezone auto-detected), open networks connect without a prompt. Cardputer binary unchanged."
+      },
       {
         "version": "1.1.1",
         "published_at": "2026-09-29",

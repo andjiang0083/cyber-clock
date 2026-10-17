@@ -121,7 +121,7 @@ By hand, for the StickS3:
 ```bash
 ESPTOOL=~/.platformio/packages/tool-esptoolpy/esptool.py
 python3 $ESPTOOL --chip esp32s3 merge_bin \
-  --output dist/cyber-clock-v1.1.1-merged.bin \
+  --output dist/cyber-clock-v1.1.2-merged.bin \
   --flash_mode dio --flash_freq 80m --flash_size 8MB \
   0x0000 .pio/build/sticks3/bootloader.bin \
   0x8000 .pio/build/sticks3/partitions.bin \
@@ -145,10 +145,10 @@ python3 $ESPTOOL --chip esp32s3 merge_bin \
 
 ```bash
 # 1. the flash-mode byte in the bootloader header must be 0x02 (DIO)
-python3 -c "d=open('dist/cyber-clock-v1.1.1-merged.bin','rb').read(); print('DIO' if d[2]==0x02 else hex(d[2]))"
+python3 -c "d=open('dist/cyber-clock-v1.1.2-merged.bin','rb').read(); print('DIO' if d[2]==0x02 else hex(d[2]))"
 
 # 2. checksum
-shasum -a 256 dist/cyber-clock-v1.1.1-merged.bin
+shasum -a 256 dist/cyber-clock-v1.1.2-merged.bin
 ```
 
 A merged image built with QIO (`0x00`) flashes fine with esptool but is rejected

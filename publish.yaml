@@ -1,0 +1,20 @@
+# cyber-clock-public — M5Burner 发布清单（发布前由 tools/check_merged.py 校验固件结构）
+# 修改版本时同步改这里；bin 必须是真 merged（bootloader + 分区表 + app）。
+project: cyber-clock-public
+platform_entries:
+  - name: CYBER CLOCK
+    device: StickS3
+    category: Display & Art
+    version: "1.1.1"
+    bin: dist/cyber-clock-v1.1.1-merged.bin
+    cover: releases/cover-1280x720-cyber-clock-sticks3.png
+    project_link: ""
+    readback: 2026-10-06 PUBLISHED vid=2105322803000909825
+  - name: CYBER CLOCK [cardputer]
+    device: Cardputer ADV
+    category: Display & Art
+    version: "1.1.1"
+    bin: dist/cyber-clock-cardputer-v1.1.1-merged.bin
+    cover: releases/cover-1280x720-cyber-clock-cardputer-cardputeradv.png
+    project_link: ""
+    readback: 2026-10-06 PUBLISHED vid=2105320627268624386

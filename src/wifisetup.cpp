@@ -1,8 +1,9 @@
-/* SPDX-License-Identifier: MIT
- * Copyright (c) 2026 andjiang0083
- */
 // ────────────────────────────────────────────────────────────
 // wifisetup.cpp — WiFi configuration flow for cyber-clock
+// v1.1.2: big-text carousel picker + AP/QR phone-provisioning
+// fallback (HOLD KEY1 on the SSID screen). Ported from Stick
+// Clock v0.2.2; NVS stays "cyberclock", AP IP 192.168.4.1 is
+// fixed by idf_wifi launcherWifiStartAp(). Direct-to-display.
 // ────────────────────────────────────────────────────────────
 #include "wifisetup.h"
 #include "textinput.h"
@@ -12,6 +13,7 @@
 
 static Preferences g_prefs;
 static bool g_timeSynced = false;
+
 bool wifiLoadCredentials(String& ssid, String& pass) {
   g_prefs.begin("cyberclock", true);
   ssid = g_prefs.getString("wifi_ssid", "");
@@ -34,7 +36,7 @@ void wifiClearCredentials() {
   g_prefs.end();
 }
 
-// ── Display helpers ──
+// ── Display helpers (direct, size-clamped) ──
 static void drawMsg(const char* line1, const char* line2 = nullptr) {
   M5.Display.fillScreen(TFT_BLACK);
   M5.Display.setTextSize(2);
@@ -43,92 +45,280 @@ static void drawMsg(const char* line1, const char* line2 = nullptr) {
   M5.Display.setCursor((240 - w1) / 2, 45);
   M5.Display.print(line1);
   if (line2) {
+    char buf[40];
+    strncpy(buf, line2, 38); buf[38] = '\0';   // fit: 39 chars max @ size=1
     M5.Display.setTextSize(1);
     M5.Display.setTextColor(M5.Display.color565(180, 180, 180), TFT_BLACK);
-    int w2 = strlen(line2) * 6;
-    if (w2 > 220) { w2 = 220; }
-    M5.Display.setCursor((240 - w2) / 2, 75);
-    M5.Display.print(line2);
+    M5.Display.setCursor((240 - (int)strlen(buf) * 6) / 2, 78);
+    M5.Display.print(buf);
   }
 }
 
-// ── Draw a scrollable list of SSIDs ──
-// Returns index of selected SSID, or -1 on cancel.
-// 注意: 此列表 UI 与 main.cpp pickTimezone() 刻意保持复制 (两文件各自独立,
-// 遵守"零渲染依赖才拆分"的项目惯例; 共用抽象需抽到零 M5GFX 依赖模块)。
+#if defined(ARDUINO_ARCH_ESP32)
+#include <WebServer.h>
+#include <DNSServer.h>
+#include "qrcode.h"
+
+static WebServer g_apServer(80);
+static DNSServer g_dnsServer;
+static volatile bool g_apSaved = false;   // set by POST /wifi
+
+// ── SSID carousel picker (ported from stick-cook v0.2.2) ──
+// KEY1 tap = next (wraps) · HOLD KEY1 ≥800ms = QR phone setup
+// KEY2 tap = pick · KEY2 hold = cancel.
+// Returns index, -1 on cancel, -2 when QR mode requested.
 static int pickSSID(const std::vector<LauncherWifiAp>& aps) {
   if (aps.empty()) return -1;
   int idx = 0;
   bool redraw = true;
-  uint32_t lastBtn = 0;
 
   while (true) {
-    uint32_t now = millis();
     M5.update();
-
     if (M5.BtnA.wasClicked()) {
       idx = (idx + 1) % aps.size();
       redraw = true;
-      lastBtn = now;
-    }
-    if (M5.BtnA.pressedFor(600) && now - lastBtn > 800) {
-      idx = (idx - 1 + aps.size()) % aps.size();
-      redraw = true;
-      lastBtn = now;
+    } else if (M5.BtnA.pressedFor(800)) {
+      return -2;                       // QR fallback requested
     }
     if (M5.BtnB.wasClicked()) { return idx; }
-    if (M5.BtnB.pressedFor(600)) { return -1; }
+    if (M5.BtnB.pressedFor(600))  { return -1; }
 
     if (!redraw) { delay(30); continue; }
     redraw = false;
 
-    M5.Display.fillScreen(TFT_BLACK);
+    auto& d = M5.Display;
+    d.fillScreen(TFT_BLACK);
 
-    // Header
-    M5.Display.setTextSize(2);
-    M5.Display.setTextColor(TFT_WHITE, TFT_BLACK);
-    M5.Display.setCursor((240 - 11 * 12) / 2, 4);
-    M5.Display.print("Select WiFi");
+    // prev / next neighbours, faint size=1 (carousel affordance)
+    const int n = aps.size();
+    char nb[40];
+    auto neighbour = [&](int i, char* out) {
+      String s = aps[i].ssid.c_str();
+      if ((int)s.length() > 36) s = s.substring(0, 34) + "..";
+      strncpy(out, s.c_str(), 38); out[38] = '\0';
+    };
 
-    // Instruction
-    M5.Display.setTextSize(1);
-    M5.Display.setTextColor(M5.Display.color565(120, 120, 120), TFT_BLACK);
-    M5.Display.setCursor((240 - 22 * 6) / 2, 118);
-    M5.Display.print("KEY1:scroll  KEY2:pick");
+    d.setTextSize(1);
+    neighbour((idx + n - 1) % n, nb);
+    d.setTextColor(M5.Display.color565(70, 78, 90));
+    d.setCursor((240 - (int)strlen(nb) * 6) / 2, 8);
+    d.print(nb);
 
-    // Draw list of visible SSIDs (max 4 at a time)
-    int start = idx - 2;
-    if (start < 0) start = 0;
-    int end = start + 4;
-    if (end > (int)aps.size()) end = aps.size();
-    if (end - start < 4 && start > 0) start = end - 4;
-    if (start < 0) start = 0;
+    neighbour((idx + 1) % n, nb);
+    d.setCursor((240 - (int)strlen(nb) * 6) / 2, 86);
+    d.print(nb);
 
-    int y = 26;
-    for (int i = start; i < end; i++) {
-      bool sel = (i == idx);
-      uint16_t bg = sel ? M5.Display.color565(0, 100, 200) : TFT_BLACK;
-      M5.Display.fillRect(4, y, 232, 20, bg);
-      M5.Display.setTextSize(1);
-      M5.Display.setTextColor(sel ? TFT_WHITE : M5.Display.color565(180, 180, 180), bg);
-      M5.Display.setCursor(8, y + 3);
+    // current SSID — big size=3, max 12 chars
+    String cur = aps[idx].ssid.c_str();
+    if ((int)cur.length() > 12) cur = cur.substring(0, 10) + "..";
+    d.setTextSize(3);
+    d.setTextColor(TFT_WHITE);
+    int cw = (int)cur.length() * 18;
+    d.setCursor((240 - cw) / 2, 34);
+    d.print(cur.c_str());
 
-      // Truncate long SSIDs
-      String ssid = aps[i].ssid.c_str();
-      if (ssid.length() > 22) ssid = ssid.substring(0, 20) + "..";
-      M5.Display.print(ssid.c_str());
-
-      // RSSI indicator
-      int rssi = aps[i].rssi;
-      const char* sig = (rssi > -50) ? "!!!" : (rssi > -70) ? "!!" : (rssi > -80) ? "!" : "~";
-      M5.Display.setCursor(215, y + 3);
-      M5.Display.print(sig);
-
-      y += 22;
+    // RSSI bars + dBm, centered as one group
+    int rssi = aps[idx].rssi;
+    int lit = (rssi > -50) ? 4 : (rssi > -62) ? 3 : (rssi > -74) ? 2 : 1;
+    char db[10];
+    snprintf(db, sizeof(db), "%ddBm", rssi);
+    int barsW = 3 * 7 + 5;                 // 4 bars, step 7
+    int gw = barsW + 8 + (int)strlen(db) * 6;
+    int gx = (240 - gw) / 2;
+    for (int i = 0; i < 4; i++) {
+      int hgt = 5 + i * 4;
+      uint16_t c = (i < lit) ? M5.Display.color565(0, 220, 120)
+                              : M5.Display.color565(40, 50, 48);
+      d.fillRect(gx + i * 7, 76 - hgt, 5, hgt, c);
     }
+    d.setTextSize(1);
+    d.setTextColor(lit >= 3 ? M5.Display.color565(0, 220, 120)
+                            : M5.Display.color565(220, 190, 80));
+    d.setCursor(gx + barsW + 8, 68);
+    d.print(db);
+
+    // hints
+    d.setTextSize(1);
+    d.setTextColor(M5.Display.color565(140, 140, 150));
+    d.setCursor((240 - 21 * 6) / 2, 104);
+    d.print("KEY1:next   KEY2:pick");
+    d.setTextColor(M5.Display.color565(80, 90, 100));
+    d.setCursor((240 - 26 * 6) / 2, 118);
+    d.print("HOLD A: QR setup on phone");
+
+    // position counter, top-right
+    char pc[12];
+    snprintf(pc, sizeof(pc), "%d/%d", idx + 1, n);
+    d.setTextColor(M5.Display.color565(80, 90, 100));
+    d.setCursor(236 - (int)strlen(pc) * 6, 2);
+    d.print(pc);
 
     delay(30);
   }
+}
+
+// ── AP + QR provisioning (phone enters WiFi credentials) ──
+static void buildApName(char* out, size_t cap) {
+  std::string mac = launcherWifiMac();       // "AA:BB:CC:DD:EE:FF"
+  if (mac.size() >= 17) {
+    snprintf(out, cap, "CyberClock-%c%c%c%c", mac[12], mac[13], mac[15], mac[16]);
+  } else {
+    snprintf(out, cap, "CyberClock");
+  }
+}
+
+static void handleApRoot() {
+  static const char* HTML = R"rawliteral(<!DOCTYPE html>
+<html><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>Cyber Clock Setup</title><style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a1418;color:#ade;font-family:-apple-system,sans-serif;text-align:center;padding:20px 16px}
+h1{color:#4cf;font-size:20px;margin-bottom:4px}
+p{color:#68a;font-size:13px;margin-bottom:14px}
+.box{background:#0f1a20;border:1px solid #1a3450;border-radius:10px;padding:14px;text-align:left}
+label{color:#6ac;font-size:12px;display:block;margin:6px 0 3px}
+input{width:100%;padding:8px 10px;font-size:14px;border:1px solid #2a5070;border-radius:6px;background:#0d1820;color:#cef;outline:none}
+input:focus{border-color:#4cf}
+button{background:#1a5080;color:#eef;border:none;padding:12px 28px;font-size:15px;border-radius:8px;cursor:pointer;width:100%;font-weight:600;margin-top:10px}
+button:active{background:#145a90}
+.ok{color:#4cf;font-size:13px;margin-top:8px;text-align:center}
+</style></head><body>
+<h1>Cyber Clock</h1>
+<p>Enter your WiFi name &amp; password,<br>then tap <strong>Save</strong>.</p>
+<div class="box">
+<label>WiFi Name (SSID)</label><input type="text" id="ssid" placeholder="e.g. MyHomeWiFi">
+<label>Password (leave blank if open)</label><input type="password" id="pass" placeholder="your WiFi password">
+<div style="color:#68a;font-size:12px;margin-top:8px" id="tz"></div>
+<button onclick="saveWifi()" id="btn">Save &amp; Connect</button>
+<div id="st"></div></div>
+<script>
+function saveWifi(){
+ var s=document.getElementById('ssid').value.trim();
+ if(!s){alert('Enter WiFi name');return}
+ var p=document.getElementById('pass').value.trim();
+ var tz=-new Date().getTimezoneOffset();
+ var b=document.getElementById('btn'),st=document.getElementById('st');
+ b.disabled=true;st.textContent='Saving...';
+ fetch('/wifi',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},
+ body:'ssid='+encodeURIComponent(s)+'&pass='+encodeURIComponent(p)+'&tz='+tz})
+ .then(function(r){return r.text()}).then(function(m){st.textContent=m;b.textContent='Done';st.className='ok'})
+ .catch(function(e){st.textContent='X '+e;b.disabled=false})}
+var tz=-new Date().getTimezoneOffset(),tn=Intl.DateTimeFormat().resolvedOptions().timeZone||'';
+document.getElementById('tz').textContent='Timezone: UTC'+(tz>=0?'+':'')+(tz/60)+' '+tn;
+</script></body></html>)rawliteral";
+  g_apServer.send(200, "text/html", HTML);
+}
+
+static void handleApPost() {
+  if (!g_apServer.hasArg("ssid")) { g_apServer.send(400, "text/plain", "Missing SSID"); return; }
+  String ssid = g_apServer.arg("ssid"); ssid.trim();
+  if (ssid.length() == 0) { g_apServer.send(400, "text/plain", "Empty SSID"); return; }
+  String pass = g_apServer.arg("pass"); pass.trim();
+  wifiSaveCredentials(ssid, pass);
+  if (g_apServer.hasArg("tz")) {                 // browser timezone → cyberclock/tz
+    int tzH = g_apServer.arg("tz").toInt() / 60;
+    if (tzH >= -12 && tzH <= 14) {
+      g_tzOffset = tzH;
+      Preferences p; p.begin("cyberclock", false); p.putInt("tz", tzH); p.end();
+    }
+  }
+  g_apServer.send(200, "text/plain", "Saved! Connecting...");
+  g_apSaved = true;
+}
+
+static void handleApNotFound() {
+  g_apServer.sendHeader("Location", "/", true);
+  g_apServer.send(302, "text/plain", "");
+}
+
+static void drawQrScreen(const char* apName) {
+  QRCode qr;
+  uint8_t qrData[qrcode_getBufferSize(2)];      // version 2, fits WIFI:T:nopass;S:...;;
+  bool qrOk = qrcode_initText(&qr, qrData, 2, ECC_LOW,
+                              (String("WIFI:T:nopass;S:") + apName + ";;").c_str()) == 0;
+
+  M5.Display.fillScreen(TFT_BLACK);
+  auto& d = M5.Display;
+  int mod = 3;
+  if (qrOk) {
+    int qrPx = qr.size * mod;                 // 75 px @ v2
+    int qx = (240 - qrPx) / 2, qy = 16;
+    for (int y = 0; y < qr.size; y++)
+      for (int x = 0; x < qr.size; x++)
+        if (qrcode_getModule(&qr, x, y))
+          d.fillRect(qx + x * mod, qy + y * mod, mod, mod, TFT_WHITE);
+  } else {
+    drawMsg("QR gen failed", NULL);
+  }
+  d.setTextSize(1);
+  d.setTextColor(TFT_WHITE);
+  char l[40];
+  snprintf(l, sizeof(l), "AP: %s", apName);
+  d.setCursor((240 - (int)strlen(l) * 6) / 2, qrOk ? 94 : 108);
+  d.print(l);
+  if (qrOk) {
+    const char* s = "type WiFi + password on phone";
+    d.setTextColor(M5.Display.color565(140, 170, 190));
+    d.setCursor((240 - (int)strlen(s) * 6) / 2, 106);
+    d.print(s);
+  }
+  const char* bk = "KEY2: back";
+  d.setTextColor(M5.Display.color565(80, 90, 100));
+  d.setCursor((240 - (int)strlen(bk) * 6) / 2, qrOk ? 120 : 94);
+  d.print(bk);
+
+  // serve until saved / KEY2 / 5-min timeout
+  g_apSaved = false;
+  uint32_t start = millis();
+  while (!g_apSaved && millis() - start < 300000) {
+    g_dnsServer.processNextRequest();
+    g_apServer.handleClient();
+    M5.update();
+    if (M5.BtnB.wasClicked()) break;
+    delay(10);
+  }
+
+  g_apServer.stop();
+  g_dnsServer.stop();
+}
+
+// Returns true = connected (flow finished). false = back to list / failed.
+static bool apPortalRun() {
+  char apName[24];
+  buildApName(apName, sizeof(apName));
+
+  if (!launcherWifiStartAp(apName, "", 0, 4)) {
+    drawMsg("AP start failed");
+    delay(1500);
+    return false;
+  }
+
+  IPAddress apIP(192, 168, 4, 1);   // idf_wifi launcherWifiStartAp fixes the AP IP here
+
+  g_dnsServer.start(53, "*", apIP);
+  g_apServer.on("/", handleApRoot);
+  g_apServer.on("/wifi", HTTP_POST, handleApPost);
+  g_apServer.onNotFound(handleApNotFound);
+  g_apServer.begin();
+
+  drawQrScreen(apName);
+
+  launcherWifiStop();          // AP off; STA takes over below
+  if (!g_apSaved) return false;
+
+  String ssid, pass;
+  wifiLoadCredentials(ssid, pass);
+  drawMsg("Connecting...", ssid.c_str());
+  if (launcherWifiConnect(ssid.c_str(), pass.c_str(), 15000)) {
+    if (syncNTP()) g_timeSynced = true;
+    drawMsg(g_timeSynced ? "Time synced!" : "WiFi connected", ssid.c_str());
+    delay(1000);
+    return true;
+  }
+  drawMsg("Connect failed", "Check phone entry");
+  delay(2000);
+  return false;
 }
 
 // ── Main WiFi setup flow ──
@@ -136,7 +326,6 @@ bool wifiRunSetupFlow() {
   drawMsg("Scanning WiFi...");
   delay(500);
 
-  // Scan
   std::vector<LauncherWifiAp> aps;
   int n = launcherWifiScan(aps);
   if (n <= 0) {
@@ -146,22 +335,20 @@ bool wifiRunSetupFlow() {
     return false;
   }
 
-  // Pick SSID
   int sel = pickSSID(aps);
-  if (sel < 0) { launcherWifiStop(); return false; }
+  if (sel == -2) return apPortalRun();
+  if (sel < 0)   { launcherWifiStop(); return false; }
 
   String ssid = aps[sel].ssid.c_str();
+  bool openNet = (aps[sel].authmode == WIFI_AUTH_OPEN);
 
-  // Enter password
   String pass;
-  char prompt[32];
-  snprintf(prompt, 32, "Password for %s", ssid.c_str());
-  if (!textInput(prompt, pass, 64)) {
-    launcherWifiStop();
-    return false;
+  if (!openNet) {
+    char prompt[48];
+    snprintf(prompt, sizeof(prompt), "Password for %.30s", ssid.c_str());
+    if (!textInput(prompt, pass, 64)) { launcherWifiStop(); return false; }
   }
 
-  // Connect
   drawMsg("Connecting...", ssid.c_str());
   delay(300);
 
@@ -170,7 +357,6 @@ bool wifiRunSetupFlow() {
     drawMsg("WiFi connected!", ssid.c_str());
     delay(1000);
 
-    // NTP sync
     if (syncNTP()) {
       g_timeSynced = true;
       drawMsg("Time synced!");
@@ -180,18 +366,22 @@ bool wifiRunSetupFlow() {
     delay(1000);
     return true;
   } else {
-    // Check if wrong password
     auto status = launcherWifiConnectStatus(ssid.c_str(), pass.c_str(), 5000);
     if (status == LauncherWifiConnectState::WrongPassword) {
       drawMsg("Wrong password!", "Try again");
     } else {
-      drawMsg("Connection failed", ssid.c_str());
+      char buf[40]; snprintf(buf, sizeof(buf), "%.38s", ssid.c_str());
+      drawMsg("Connection failed", buf);
     }
     launcherWifiStop();
     delay(2000);
     return false;
   }
 }
+
+#else  // non-esp32 stubs (build safety)
+bool wifiRunSetupFlow() { return false; }
+#endif
 
 // ── WiFi begin ──
 bool wifiSetupBegin(bool forceReconfig) {
